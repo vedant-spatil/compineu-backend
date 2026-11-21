@@ -1,0 +1,399 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  PolicyGuard AI demo stack (ap-south-1). One EC2 box behind CloudFront, private S3 buckets, an Object Lock evidence
+  bucket and a least-privilege instance role. No SSH: shell access is through SSM Session Manager.
+  Deploy with infra/deploy.sh, which creates the secrets in SSM Parameter Store first.
+
+Parameters:
+  Project:
+    Type: String
+    Default: policyguard
+  InstanceType:
+    Type: String
+    Default: t3a.large
+  AmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: A public subnet (the default VPC's subnets are public).
+  CloudFrontPrefixList:
+    Type: String
+    Default: pl-9aa247f3
+    Description: Managed prefix list com.amazonaws.global.cloudfront.origin-facing in ap-south-1.
+  OriginSecret:
+    Type: String
+    NoEcho: true
+    MinLength: 32
+    Description: Sent by CloudFront as X-Origin-Verify; nginx rejects requests without it.
+  HeavyProfile:
+    Type: String
+    Default: global.anthropic.claude-sonnet-4-6
+  HeavyModel:
+    Type: String
+    Default: anthropic.claude-sonnet-4-6
+  LightProfile:
+    Type: String
+    Default: in.anthropic.claude-haiku-4-5-20251001-v1:0
+  LightModel:
+    Type: String
+    Default: anthropic.claude-haiku-4-5-20251001-v1:0
+  EvidenceRetentionDays:
+    Type: Number
+    Default: 1
+    Description: Object Lock COMPLIANCE retention. 1 day in the organisers' account; 365 in production.
+
+Resources:
+  # ---------------------------------------------------------------- logs
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /${Project}/prod
+      RetentionInDays: 7
+
+  # ---------------------------------------------------------------- buckets
+  EvidenceBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain          # compliance-mode objects cannot be deleted before retention ends, by anyone
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub ${Project}-evidence-${AWS::AccountId}
+      ObjectLockEnabled: true
+      ObjectLockConfiguration:
+        ObjectLockEnabled: Enabled
+        Rule:
+          DefaultRetention:
+            Mode: COMPLIANCE
+            Days: !Ref EvidenceRetentionDays
+      VersioningConfiguration: { Status: Enabled }
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: { SSEAlgorithm: AES256 }
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules: [{ ObjectOwnership: BucketOwnerEnforced }]
+
+  WebBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${Project}-web-${AWS::AccountId}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: { SSEAlgorithm: AES256 }
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules: [{ ObjectOwnership: BucketOwnerEnforced }]
+
+  ArtifactsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${Project}-artifacts-${AWS::AccountId}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: { SSEAlgorithm: AES256 }
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules: [{ ObjectOwnership: BucketOwnerEnforced }]
+      LifecycleConfiguration:
+        Rules: [{ Id: expire, Status: Enabled, ExpirationInDays: 7 }]
+
+  EvidenceBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref EvidenceBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource: [!GetAtt EvidenceBucket.Arn, !Sub "${EvidenceBucket.Arn}/*"]
+            Condition: { Bool: { aws:SecureTransport: "false" } }
+
+  ArtifactsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ArtifactsBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource: [!GetAtt ArtifactsBucket.Arn, !Sub "${ArtifactsBucket.Arn}/*"]
+            Condition: { Bool: { aws:SecureTransport: "false" } }
+
+  WebBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource: [!GetAtt WebBucket.Arn, !Sub "${WebBucket.Arn}/*"]
+            Condition: { Bool: { aws:SecureTransport: "false" } }
+          - Sid: CloudFrontReadOnly      # only this distribution, through Origin Access Control
+            Effect: Allow
+            Principal: { Service: cloudfront.amazonaws.com }
+            Action: s3:GetObject
+            Resource: !Sub "${WebBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}
+
+  # ---------------------------------------------------------------- instance role (no access keys on the box)
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${Project}-ec2-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ec2.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore   # Session Manager + Run Command, instead of SSH
+      Policies:
+        - PolicyName: !Sub ${Project}-app
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: BedrockInvokeTwoModelsOnly
+                Effect: Allow
+                Action: [bedrock:InvokeModel, bedrock:InvokeModelWithResponseStream]
+                Resource:
+                  - !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/${HeavyProfile}
+                  - !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/${LightProfile}
+                  - !Sub arn:aws:bedrock:*::foundation-model/${HeavyModel}
+                  - !Sub arn:aws:bedrock:::foundation-model/${HeavyModel}   # region-less ARN used by global. profiles
+                  - !Sub arn:aws:bedrock:*::foundation-model/${LightModel}  # in. profile routes to ap-south-1 and ap-south-2
+              - Sid: BedrockGuardrail
+                Effect: Allow
+                Action: bedrock:ApplyGuardrail
+                Resource: !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:guardrail/*
+              - Sid: EvidenceWriteNoDelete
+                Effect: Allow
+                Action: [s3:PutObject, s3:PutObjectRetention, s3:GetObject, s3:GetObjectRetention, s3:GetObjectVersion]
+                Resource: !Sub "${EvidenceBucket.Arn}/*"
+              - Sid: EvidenceList
+                Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt EvidenceBucket.Arn
+              - Sid: NeverDeleteEvidence
+                Effect: Deny
+                Action: [s3:DeleteObject, s3:DeleteObjectVersion, s3:BypassGovernanceRetention, s3:PutBucketObjectLockConfiguration]
+                Resource: [!GetAtt EvidenceBucket.Arn, !Sub "${EvidenceBucket.Arn}/*"]
+              - Sid: ReadDeployArtifacts
+                Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub "${ArtifactsBucket.Arn}/*"
+              - Sid: ReadOwnSecrets
+                Effect: Allow
+                Action: [ssm:GetParameter, ssm:GetParameters, ssm:GetParametersByPath]
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${Project}/*
+              - Sid: DecryptSecretsViaSsmOnly
+                Effect: Allow
+                Action: kms:Decrypt
+                Resource: "*"
+                Condition: { StringEquals: { kms:ViaService: !Sub "ssm.${AWS::Region}.amazonaws.com" } }
+              - Sid: LogsWrite
+                Effect: Allow
+                Action: [logs:CreateLogStream, logs:PutLogEvents, logs:DescribeLogStreams]
+                Resource: !Sub "${LogGroup.Arn}"
+              - Sid: LogsQueryForObservabilityPage
+                Effect: Allow
+                Action: [logs:StartQuery, logs:StopQuery, logs:GetQueryResults, logs:DescribeLogGroups]
+                Resource: "*"
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub ${Project}-ec2-profile
+      Roles: [!Ref InstanceRole]
+
+  # ---------------------------------------------------------------- network: only CloudFront may reach the box
+  BoxSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Project}-box
+      GroupDescription: HTTP from CloudFront origin-facing IPs only. No SSH.
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourcePrefixListId: !Ref CloudFrontPrefixList
+          Description: CloudFront origin-facing
+
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub ${Project}-box
+      LaunchTemplateData:
+        MetadataOptions:
+          HttpTokens: required          # IMDSv2 only
+          HttpPutResponseHopLimit: 2    # containers need one extra hop to reach the instance role credentials
+          HttpEndpoint: enabled
+        BlockDeviceMappings:
+          - DeviceName: /dev/sda1
+            Ebs: { VolumeSize: 30, VolumeType: gp3, Encrypted: true, DeleteOnTermination: true }
+
+  Box:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmiId
+      InstanceType: !Ref InstanceType
+      IamInstanceProfile: !Ref InstanceProfile
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds: [!Ref BoxSecurityGroup]
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      Tags: [{ Key: Name, Value: !Sub "${Project}-box" }]
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          # First boot only. Ubuntu 24.04 ships the SSM agent (snap), so Session Manager works without SSH.
+          set -euxo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+          if ! swapon --show | grep -q /swapfile; then
+            fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+            echo '/swapfile none swap sw 0 0' >> /etc/fstab
+          fi
+          apt-get update -y
+          apt-get install -y ca-certificates curl git jq unzip
+          command -v docker || curl -fsSL https://get.docker.com | sh
+          usermod -aG docker ubuntu
+          systemctl enable --now docker
+          snap install aws-cli --classic || true
+          mkdir -p /opt/policyguard && chown ubuntu:ubuntu /opt/policyguard
+          echo ready > /opt/policyguard/.bootstrapped
+
+  BoxIp:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags: [{ Key: Name, Value: !Sub "${Project}-box" }]
+
+  BoxIpAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt BoxIp.AllocationId
+      InstanceId: !Ref Box
+
+  # ---------------------------------------------------------------- CloudFront: one origin for the page and /api
+  WebOac:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub ${Project}-web-oac
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # React routes -> /index.html on the S3 behaviour only. A distribution-wide custom error page would also turn the
+  # API's 403 (PB1 suspended agent) into index.html, which is the moment the demo needs to show.
+  SpaRewrite:
+    Type: AWS::CloudFront::Function
+    Properties:
+      Name: !Sub ${Project}-spa-rewrite
+      AutoPublish: true
+      FunctionConfig: { Comment: SPA routes to index.html, Runtime: cloudfront-js-2.0 }
+      FunctionCode: |
+        function handler(event) {
+          var req = event.request;
+          var last = req.uri.split('/').pop();
+          if (last.indexOf('.') === -1) { req.uri = '/index.html'; }
+          return req;
+        }
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: !Sub ${Project} web + api
+        Enabled: true
+        HttpVersion: http2and3
+        IPV6Enabled: true
+        PriceClass: PriceClass_200          # includes India edge locations
+        DefaultRootObject: index.html
+        Origins:
+          - Id: web
+            DomainName: !GetAtt WebBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt WebOac.Id
+            S3OriginConfig: { OriginAccessIdentity: "" }
+          - Id: api
+            # CloudFront needs a DNS name, not an IP: the EC2 public DNS name of the Elastic IP.
+            DomainName: !Sub
+              - ec2-${Dashed}.${AWS::Region}.compute.amazonaws.com
+              - Dashed: !Join ["-", !Split [".", !Ref BoxIp]]
+            CustomOriginConfig:
+              HTTPPort: 80
+              OriginProtocolPolicy: http-only
+              OriginReadTimeout: 60
+              OriginKeepaliveTimeout: 60
+            OriginCustomHeaders:
+              - HeaderName: X-Origin-Verify
+                HeaderValue: !Ref OriginSecret
+        DefaultCacheBehavior:
+          TargetOriginId: web
+          ViewerProtocolPolicy: redirect-to-https
+          Compress: true
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6          # Managed-CachingOptimized
+          ResponseHeadersPolicyId: 67f7725c-6f97-4210-82d7-5512b31e9d03 # Managed-SecurityHeadersPolicy
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt SpaRewrite.FunctionMetadata.FunctionARN
+        CacheBehaviors:
+          - PathPattern: /api/*
+            TargetOriginId: api
+            ViewerProtocolPolicy: https-only
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, PATCH, POST, DELETE]
+            CachedMethods: [GET, HEAD]
+            Compress: false                                             # keep the SSE stream unbuffered
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad          # Managed-CachingDisabled
+            OriginRequestPolicyId: 216adef6-5c7f-47e4-b989-5492eafa07d3  # Managed-AllViewer (forwards Authorization)
+            ResponseHeadersPolicyId: 67f7725c-6f97-4210-82d7-5512b31e9d03
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+
+Outputs:
+  AppUrl:
+    Value: !Sub https://${Distribution.DomainName}
+  DistributionId:
+    Value: !Ref Distribution
+  InstanceId:
+    Value: !Ref Box
+  OriginDns:
+    Value: !Sub
+      - ec2-${Dashed}.${AWS::Region}.compute.amazonaws.com
+      - Dashed: !Join ["-", !Split [".", !Ref BoxIp]]
+  WebBucket:
+    Value: !Ref WebBucket
+  EvidenceBucket:
+    Value: !Ref EvidenceBucket
+  ArtifactsBucket:
+    Value: !Ref ArtifactsBucket
+  LogGroup:
+    Value: !Ref LogGroup

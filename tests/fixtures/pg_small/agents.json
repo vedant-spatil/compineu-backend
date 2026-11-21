@@ -1,0 +1,267 @@
+[
+ {
+  "name": "Sanjay More",
+  "branch": "THANE-01",
+  "focus": "motor",
+  "daily": 28,
+  "agent_id": "AG-0577",
+  "channel": "agent",
+  "role": "agent",
+  "manager_id": "MG-013",
+  "hr_status": "terminated",
+  "credential_enabled": true,
+  "known_devices": [
+   "dv-21a4",
+   "dv-1712"
+  ],
+  "home_ip": "10.22.233.77",
+  "hired_on": "2022-09-04",
+  "home_city": "Thane",
+  "usual_start_hour": 10,
+  "usual_end_hour": 19
+ },
+ {
+  "name": "Priya Joshi",
+  "branch": "PUNE-01",
+  "focus": "motor",
+  "daily": 110,
+  "agent_id": "AG-0932",
+  "channel": "agent",
+  "role": "agent",
+  "manager_id": "MG-014",
+  "hr_status": "active",
+  "credential_enabled": true,
+  "known_devices": [
+   "dv-ec95",
+   "dv-e1cd"
+  ],
+  "home_ip": "10.23.145.166",
+  "hired_on": "2022-09-19",
+  "home_city": "Pune",
+  "usual_start_hour": 10,
+  "usual_end_hour": 19
+ },
+ {
+  "name": "Anita Deshpande",
+  "branch": "PUNE-01",
+  "focus": "mixed",
+  "daily": 30,
+  "agent_id": "AG-1033",
+  "channel": "agent",
+  "role": "agent",
+  "manager_id": "MG-014",
+  "hr_status": "active",
+  "credential_enabled": true,
+  "known_devices": [
+   "dv-39fe"
+  ],
+  "home_ip": "10.23.36.41",
+  "hired_on": "2025-06-22",
+  "home_city": "Pune",
+  "usual_start_hour": 10,
+  "usual_end_hour": 19
+ },
+ {
+  "name": "Dev Sharma",
+  "branch": "MUMBAI-01",
+  "focus": "mixed",
+  "daily": 30,
+  "agent_id": "AG-1088",
+  "channel": "agent",
+  "role": "agent",
+  "manager_id": "MG-011",
+  "hr_status": "active",
+  "credential_enabled": true,
+  "known_devices": [
+   "dv-62db"
+  ],
+  "home_ip": "10.20.21.97",
+  "hired_on": "2023-10-28",
+  "home_city": "Mumbai",
+  "usual_start_hour": 10,
+  "usual_end_hour": 19
+ },
+ {
+  "name": "Raj Mehta",
+  "branch": "MUMBAI-01",
+  "focus": "motor",
+  "daily": 110,
+  "agent_id": "AG-1090",
+  "channel": "agent",
+  "role": "agent",
+  "manager_id": "MG-011",
+  "hr_status": "active",
+  "credential_enabled": true,
+  "known_devices": [
+   "dv-5195"
+  ],
+  "home_ip": "10.20.239.27",
+  "hired_on": "2022-07-31",
+  "home_city": "Mumbai",
+  "usual_start_hour": 10,
+  "usual_end_hour": 19
+ },
+ {
+  "name": "Kiran Pawar",
+  "branch": "NASHIK-01",
+  "focus": "mixed",
+  "daily": 30,
+  "agent_id": "AG-1120",
+  "channel": "agent",
+  "role": "agent",
+  "manager_id": "MG-016",
+  "hr_status": "active",
+  "credential_enabled": true,
+  "known_devices": [
+   "dv-f982",
+   "dv-5c50"
+  ],
+  "home_ip": "10.25.18.246",
+  "hired_on": "2020-06-10",
+  "home_city": "Nashik",
+  "usual_start_hour": 10,
+  "usual_end_hour": 19
+ },
+ {
+  "name": "Meena Kale",
+  "branch": "NASHIK-01",
+  "focus": "motor",
+  "daily": 120,
+  "agent_id": "AG-1121",
+  "channel": "agent",
+  "role": "agent",
+  "manager_id": "MG-016",
+  "hr_status": "active",
+  "credential_enabled": true,
+  "known_devices": [
+   "dv-81e0",
+   "dv-c952"
+  ],
+  "home_ip": "10.25.130.143",
+  "hired_on": "2026-02-10",
+  "home_city": "Nashik",
+  "usual_start_hour": 10,
+  "usual_end_hour": 19
+ },
+ {
+  "name": "Rohit Patil",
+  "branch": "PUNE-02",
+  "focus": "motor",
+  "daily": 34,
+  "agent_id": "AG-1147",
+  "channel": "agent",
+  "role": "agent",
+  "manager_id": "MG-015",
+  "hr_status": "active",
+  "credential_enabled": true,
+  "known_devices": [
+   "dv-76f1",
+   "dv-fb16"
+  ],
+  "home_ip": "10.24.179.124",
+  "hired_on": "2024-04-18",
+  "home_city": "Pune",
+  "usual_start_hour": 10,
+  "usual_end_hour": 19
+ },
+ {
+  "agent_id": "MG-011",
+  "name": "Deepa Shinde",
+  "branch": "MUMBAI-01",
+  "channel": "staff",
+  "role": "branch_manager",
+  "manager_id": null,
+  "hr_status": "active",
+  "credential_enabled": true,
+  "known_devices": [
+   "dv-92ec"
+  ],
+  "home_ip": "10.20.0.37",
+  "focus": "team",
+  "daily": 15,
+  "hired_on": "2016-11-04",
+  "home_city": "Mumbai",
+  "usual_start_hour": 10,
+  "usual_end_hour": 19
+ },
+ {
+  "agent_id": "MG-013",
+  "name": "Pooja Bansal",
+  "branch": "THANE-01",
+  "channel": "staff",
+  "role": "branch_manager",
+  "manager_id": null,
+  "hr_status": "active",
+  "credential_enabled": true,
+  "known_devices": [
+   "dv-848a"
+  ],
+  "home_ip": "10.22.0.101",
+  "focus": "team",
+  "daily": 15,
+  "hired_on": "2016-06-25",
+  "home_city": "Thane",
+  "usual_start_hour": 10,
+  "usual_end_hour": 19
+ },
+ {
+  "agent_id": "MG-014",
+  "name": "Deepa Shah",
+  "branch": "PUNE-01",
+  "channel": "staff",
+  "role": "branch_manager",
+  "manager_id": null,
+  "hr_status": "active",
+  "credential_enabled": true,
+  "known_devices": [
+   "dv-b43b"
+  ],
+  "home_ip": "10.23.0.116",
+  "focus": "team",
+  "daily": 15,
+  "hired_on": "2020-05-17",
+  "home_city": "Pune",
+  "usual_start_hour": 10,
+  "usual_end_hour": 19
+ },
+ {
+  "agent_id": "MG-015",
+  "name": "Sanjay Bansal",
+  "branch": "PUNE-02",
+  "channel": "staff",
+  "role": "branch_manager",
+  "manager_id": null,
+  "hr_status": "active",
+  "credential_enabled": true,
+  "known_devices": [
+   "dv-333e"
+  ],
+  "home_ip": "10.24.0.33",
+  "focus": "team",
+  "daily": 15,
+  "hired_on": "2021-04-05",
+  "home_city": "Pune",
+  "usual_start_hour": 10,
+  "usual_end_hour": 19
+ },
+ {
+  "agent_id": "MG-016",
+  "name": "Vijay Iyer",
+  "branch": "NASHIK-01",
+  "channel": "staff",
+  "role": "branch_manager",
+  "manager_id": null,
+  "hr_status": "active",
+  "credential_enabled": true,
+  "known_devices": [
+   "dv-e60f"
+  ],
+  "home_ip": "10.25.0.184",
+  "focus": "team",
+  "daily": 15,
+  "hired_on": "2017-10-15",
+  "home_city": "Nashik",
+  "usual_start_hour": 10,
+  "usual_end_hour": 19
+ }
+]

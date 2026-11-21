@@ -1,0 +1,121 @@
+{
+ "seed": 42,
+ "demo_day": "2026-11-20",
+ "timestamps": "plain UTC, no timezone",
+ "counts": {
+  "agents": 8,
+  "managers": 5,
+  "policyholders": 3780,
+  "portfolio_rows": 4000,
+  "claims": 1065,
+  "partner_keys": 3,
+  "context_records": 24,
+  "history_events": 2111,
+  "scenario_events": 2317
+ },
+ "scenarios": {
+  "S1": {
+   "title": "An agent's bad night",
+   "expected_route": "incident",
+   "expected_score": 89,
+   "expected_signals": [
+    "A1",
+    "A2",
+    "A3",
+    "A4",
+    "A5"
+   ],
+   "scenario_label": "malicious_insider",
+   "expected_playbooks": [
+    "PB1",
+    "PB6",
+    "PB7"
+   ],
+   "actor": "AG-1147",
+   "is_attack": true,
+   "start": "2026-11-20T18:08:00",
+   "end": "2026-11-20T18:46:00",
+   "events": 1843,
+   "records": 1840,
+   "duration_s": 2280
+  },
+  "S1b": {
+   "title": "Cover for a colleague on leave",
+   "expected_route": "auto_resolve",
+   "expected_score": 54,
+   "expected_signals": [
+    "A1",
+    "A2"
+   ],
+   "expected_verdict": "justified",
+   "colleague": "AG-0932",
+   "scenario_label": "benign_exception",
+   "actor": "AG-1033",
+   "is_attack": false,
+   "start": "2026-11-20T05:00:00",
+   "end": "2026-11-20T05:58:33",
+   "events": 131,
+   "records": 130,
+   "duration_s": 3513
+  },
+  "S1c": {
+   "title": "The forged ticket",
+   "expected_route": "incident",
+   "expected_score": 54,
+   "expected_signals": [
+    "A1",
+    "A2"
+   ],
+   "expected_verdict": "inconclusive",
+   "colleague": "AG-1090",
+   "scenario_label": "malicious_insider",
+   "actor": "AG-1088",
+   "is_attack": true,
+   "start": "2026-11-20T04:30:00",
+   "end": "2026-11-20T05:28:33",
+   "events": 131,
+   "records": 130,
+   "duration_s": 3513
+  },
+  "S1d": {
+   "title": "Forged ticket on a real leave",
+   "expected_route": "incident",
+   "expected_score": 55,
+   "expected_signals": [
+    "A1",
+    "A2"
+   ],
+   "expected_verdict": "inconclusive",
+   "colleague": "AG-1121",
+   "scenario_label": "malicious_insider",
+   "actor": "AG-1120",
+   "is_attack": true,
+   "start": "2026-11-20T05:30:00",
+   "end": "2026-11-20T06:28:39",
+   "events": 171,
+   "records": 170,
+   "duration_s": 3519
+  },
+  "S5": {
+   "title": "The ex-employee",
+   "expected_route": "incident",
+   "expected_score": 60,
+   "expected_formula_score": 50,
+   "expected_signals": [
+    "I1"
+   ],
+   "scenario_label": "compromised_account",
+   "expected_playbooks": [
+    "PB1",
+    "PB7"
+   ],
+   "actor": "AG-0577",
+   "is_attack": true,
+   "start": "2026-11-20T05:35:00",
+   "end": "2026-11-20T06:00:22",
+   "events": 41,
+   "records": 40,
+   "duration_s": 1522
+  }
+ }
+}

@@ -1,0 +1,29 @@
+.env
+.venv/
+data/
+docs/*.csv
+__pycache__/
+*.log
+.pytest_cache/
+.ruff_cache/
+*/__pycache__/
+docs/
+
+# Migration (plan.md section 22): code moves to app/ml, these stay local only
+third_party/
+artifacts/
+external/
+/pipeline/
+mainvenv/
+
+# Model checkpoints and tool caches: not source, never pushed
+models/
+graphify-out/
+
+# Box-only secrets and generated nginx config for the yente route (scripts/aws/11-yente-route.sh)
+secrets/
+docker/nginx/yente/yente.conf
+
+# Local AI context: CLAUDE.md and the markdown/ docs stay on this machine
+CLAUDE.md
+markdown/

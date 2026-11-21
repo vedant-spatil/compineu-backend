@@ -1,0 +1,368 @@
+[
+ {
+  "ref": "HRS-22",
+  "type": "hr_status",
+  "subject_agent": "AG-0577",
+  "named_agent": null,
+  "created_by": "HR-001",
+  "created_at": "2022-09-04T00:00:00",
+  "valid_from": "2022-09-03T18:30:00",
+  "valid_to": "2026-11-18T18:30:00",
+  "payload": {
+   "ref": "HRS-22",
+   "status": "active"
+  }
+ },
+ {
+  "ref": "HRS-115",
+  "type": "hr_status",
+  "subject_agent": "AG-0932",
+  "named_agent": null,
+  "created_by": "HR-001",
+  "created_at": "2022-09-19T00:00:00",
+  "valid_from": "2022-09-18T18:30:00",
+  "valid_to": "2099-12-30T18:30:00",
+  "payload": {
+   "ref": "HRS-115",
+   "status": "active"
+  }
+ },
+ {
+  "ref": "HRS-139",
+  "type": "hr_status",
+  "subject_agent": "AG-1033",
+  "named_agent": null,
+  "created_by": "HR-001",
+  "created_at": "2025-06-22T00:00:00",
+  "valid_from": "2025-06-21T18:30:00",
+  "valid_to": "2099-12-30T18:30:00",
+  "payload": {
+   "ref": "HRS-139",
+   "status": "active"
+  }
+ },
+ {
+  "ref": "HRS-157",
+  "type": "hr_status",
+  "subject_agent": "AG-1088",
+  "named_agent": null,
+  "created_by": "HR-001",
+  "created_at": "2023-10-28T00:00:00",
+  "valid_from": "2023-10-27T18:30:00",
+  "valid_to": "2099-12-30T18:30:00",
+  "payload": {
+   "ref": "HRS-157",
+   "status": "active"
+  }
+ },
+ {
+  "ref": "HRS-158",
+  "type": "hr_status",
+  "subject_agent": "AG-1090",
+  "named_agent": null,
+  "created_by": "HR-001",
+  "created_at": "2022-07-31T00:00:00",
+  "valid_from": "2022-07-30T18:30:00",
+  "valid_to": "2099-12-30T18:30:00",
+  "payload": {
+   "ref": "HRS-158",
+   "status": "active"
+  }
+ },
+ {
+  "ref": "HRS-170",
+  "type": "hr_status",
+  "subject_agent": "AG-1120",
+  "named_agent": null,
+  "created_by": "HR-001",
+  "created_at": "2020-06-10T00:00:00",
+  "valid_from": "2020-06-09T18:30:00",
+  "valid_to": "2099-12-30T18:30:00",
+  "payload": {
+   "ref": "HRS-170",
+   "status": "active"
+  }
+ },
+ {
+  "ref": "HRS-171",
+  "type": "hr_status",
+  "subject_agent": "AG-1121",
+  "named_agent": null,
+  "created_by": "HR-001",
+  "created_at": "2026-02-10T00:00:00",
+  "valid_from": "2026-02-09T18:30:00",
+  "valid_to": "2099-12-30T18:30:00",
+  "payload": {
+   "ref": "HRS-171",
+   "status": "active"
+  }
+ },
+ {
+  "ref": "HRS-177",
+  "type": "hr_status",
+  "subject_agent": "AG-1147",
+  "named_agent": null,
+  "created_by": "HR-001",
+  "created_at": "2024-04-18T00:00:00",
+  "valid_from": "2024-04-17T18:30:00",
+  "valid_to": "2099-12-30T18:30:00",
+  "payload": {
+   "ref": "HRS-177",
+   "status": "active"
+  }
+ },
+ {
+  "ref": "HRS-201",
+  "type": "hr_status",
+  "subject_agent": "AG-0577",
+  "named_agent": null,
+  "created_by": "HR-001",
+  "created_at": "2026-11-19T04:30:00",
+  "valid_from": "2026-11-18T18:30:00",
+  "valid_to": "2099-12-30T18:30:00",
+  "payload": {
+   "ref": "HRS-201",
+   "status": "terminated",
+   "note": "exit processed; portal credential pending IT disable"
+  }
+ },
+ {
+  "ref": "LV-221",
+  "type": "leave",
+  "subject_agent": "AG-0932",
+  "named_agent": null,
+  "created_by": "MG-014",
+  "created_at": "2026-11-10T09:00:00",
+  "valid_from": "2026-11-15T18:30:00",
+  "valid_to": "2026-11-22T18:30:00",
+  "payload": {
+   "ref": "LV-221",
+   "employee": "AG-0932",
+   "from": "2026-11-16",
+   "to": "2026-11-22",
+   "approved_by": "MG-014"
+  }
+ },
+ {
+  "ref": "TKT-4471",
+  "type": "ticket",
+  "subject_agent": "AG-0932",
+  "named_agent": "AG-1033",
+  "created_by": "MG-014",
+  "created_at": "2026-11-15T11:50:00",
+  "valid_from": null,
+  "valid_to": null,
+  "payload": {
+   "ref": "TKT-4471",
+   "author_role": "branch_manager",
+   "body": "Anita to cover Priya's renewals while she is on leave this week. Please action."
+  }
+ },
+ {
+  "ref": "TKT-4480",
+  "type": "ticket",
+  "subject_agent": "AG-1090",
+  "named_agent": "AG-1088",
+  "created_by": "AG-1088",
+  "created_at": "2026-11-20T04:22:00",
+  "valid_from": null,
+  "valid_to": null,
+  "payload": {
+   "ref": "TKT-4480",
+   "author_role": "agent",
+   "body": "Covering Raj's customers, approved."
+  }
+ },
+ {
+  "ref": "LV-230",
+  "type": "leave",
+  "subject_agent": "AG-1121",
+  "named_agent": null,
+  "created_by": "MG-016",
+  "created_at": "2026-11-12T05:35:00",
+  "valid_from": "2026-11-16T18:30:00",
+  "valid_to": "2026-11-21T18:30:00",
+  "payload": {
+   "ref": "LV-230",
+   "employee": "AG-1121",
+   "from": "2026-11-17",
+   "to": "2026-11-21",
+   "approved_by": "MG-016"
+  }
+ },
+ {
+  "ref": "TKT-4490",
+  "type": "ticket",
+  "subject_agent": "AG-1121",
+  "named_agent": "AG-1120",
+  "created_by": "AG-1120",
+  "created_at": "2026-11-18T04:45:00",
+  "valid_from": null,
+  "valid_to": null,
+  "payload": {
+   "ref": "TKT-4490",
+   "author_role": "agent",
+   "body": "Covering Meena's renewals while she is on leave, approved by manager."
+  }
+ },
+ {
+  "ref": "LV-301",
+  "type": "leave",
+  "subject_agent": "AG-0633",
+  "named_agent": null,
+  "created_by": "MG-013",
+  "created_at": "2026-10-24T05:30:00",
+  "valid_from": "2026-10-28T18:30:00",
+  "valid_to": "2026-11-02T18:30:00",
+  "payload": {
+   "ref": "LV-301",
+   "employee": "AG-0633",
+   "from": "2026-10-29",
+   "to": "2026-11-02",
+   "approved_by": "MG-013"
+  }
+ },
+ {
+  "ref": "LV-304",
+  "type": "leave",
+  "subject_agent": "AG-1025",
+  "named_agent": null,
+  "created_by": "MG-013",
+  "created_at": "2026-10-18T05:30:00",
+  "valid_from": "2026-10-22T18:30:00",
+  "valid_to": "2026-10-25T18:30:00",
+  "payload": {
+   "ref": "LV-304",
+   "employee": "AG-1025",
+   "from": "2026-10-23",
+   "to": "2026-10-25",
+   "approved_by": "MG-013"
+  }
+ },
+ {
+  "ref": "LV-305",
+  "type": "leave",
+  "subject_agent": "AG-1021",
+  "named_agent": null,
+  "created_by": "MG-011",
+  "created_at": "2026-11-01T05:30:00",
+  "valid_from": "2026-11-05T18:30:00",
+  "valid_to": "2026-11-09T18:30:00",
+  "payload": {
+   "ref": "LV-305",
+   "employee": "AG-1021",
+   "from": "2026-11-06",
+   "to": "2026-11-09",
+   "approved_by": "MG-011"
+  }
+ },
+ {
+  "ref": "LV-309",
+  "type": "leave",
+  "subject_agent": "AG-0605",
+  "named_agent": null,
+  "created_by": "MG-016",
+  "created_at": "2026-11-12T05:30:00",
+  "valid_from": "2026-11-16T18:30:00",
+  "valid_to": "2026-11-18T18:30:00",
+  "payload": {
+   "ref": "LV-309",
+   "employee": "AG-0605",
+   "from": "2026-11-17",
+   "to": "2026-11-18",
+   "approved_by": "MG-016"
+  }
+ },
+ {
+  "ref": "TR-50",
+  "type": "transfer",
+  "subject_agent": "AG-0677",
+  "named_agent": "AG-0595",
+  "created_by": "MG-013",
+  "created_at": "2026-10-26T09:30:00",
+  "valid_from": "2026-10-27T18:30:00",
+  "valid_to": "2026-11-02T18:30:00",
+  "payload": {
+   "ref": "TR-50",
+   "from_agent": "AG-0677",
+   "to_agent": "AG-0595",
+   "approved_by": "MG-013"
+  }
+ },
+ {
+  "ref": "TR-53",
+  "type": "transfer",
+  "subject_agent": "AG-0648",
+  "named_agent": "AG-0910",
+  "created_by": "MG-016",
+  "created_at": "2026-11-07T09:30:00",
+  "valid_from": "2026-11-08T18:30:00",
+  "valid_to": "2026-11-14T18:30:00",
+  "payload": {
+   "ref": "TR-53",
+   "from_agent": "AG-0648",
+   "to_agent": "AG-0910",
+   "approved_by": "MG-016"
+  }
+ },
+ {
+  "ref": "TKT-3009",
+  "type": "ticket",
+  "subject_agent": "AG-0568",
+  "named_agent": null,
+  "created_by": "MG-016",
+  "created_at": "2026-11-02T06:30:00",
+  "valid_from": null,
+  "valid_to": null,
+  "payload": {
+   "ref": "TKT-3009",
+   "author_role": "branch_manager",
+   "body": "Customer asked for a duplicate policy copy."
+  }
+ },
+ {
+  "ref": "TKT-3016",
+  "type": "ticket",
+  "subject_agent": "AG-0669",
+  "named_agent": null,
+  "created_by": "MG-011",
+  "created_at": "2026-11-06T07:30:00",
+  "valid_from": null,
+  "valid_to": null,
+  "payload": {
+   "ref": "TKT-3016",
+   "author_role": "branch_manager",
+   "body": "Nominee update documents pending from customer."
+  }
+ },
+ {
+  "ref": "TKT-3027",
+  "type": "ticket",
+  "subject_agent": "AG-1166",
+  "named_agent": null,
+  "created_by": "MG-013",
+  "created_at": "2026-11-04T10:30:00",
+  "valid_from": null,
+  "valid_to": null,
+  "payload": {
+   "ref": "TKT-3027",
+   "author_role": "branch_manager",
+   "body": "Customer asked for a duplicate policy copy."
+  }
+ },
+ {
+  "ref": "TKT-3034",
+  "type": "ticket",
+  "subject_agent": "AG-1090",
+  "named_agent": null,
+  "created_by": "MG-011",
+  "created_at": "2026-11-09T10:30:00",
+  "valid_from": null,
+  "valid_to": null,
+  "payload": {
+   "ref": "TKT-3034",
+   "author_role": "branch_manager",
+   "body": "Follow up on NCB certificate for motor renewal."
+  }
+ }
+]

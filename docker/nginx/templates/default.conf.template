@@ -1,0 +1,47 @@
+# nginx in front of the API, behind CloudFront. Named default.conf so it replaces the image's stock site.
+# HTTP only: CloudFront terminates HTTPS, and the security group admits only CloudFront's origin-facing IPs.
+
+server {
+    listen 80 default_server;
+    server_name _;
+    server_tokens off;
+
+    # Only our CloudFront distribution knows this header value. Blocks direct hits and other distributions.
+    if ($http_x_origin_verify != "${ORIGIN_SECRET}") {
+        return 403;
+    }
+
+    client_max_body_size 20m;
+    proxy_read_timeout 300s;   # case runs can take a while
+
+    # Docker's DNS, looked up per request, so an API recreate never leaves nginx pointing at an old container IP.
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    set $api_upstream http://api:8000;
+
+    # Live updates (server-sent events): no buffering, long timeout. The API sends a ping every 15 s, under
+    # CloudFront's 60 s origin read timeout.
+    location /api/stream {
+        proxy_pass $api_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 1h;
+    }
+
+    location /api/ {
+        proxy_pass $api_upstream;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    location / {
+        return 404;   # the React app is served by CloudFront from S3, never from this box
+    }
+}
