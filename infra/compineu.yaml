@@ -28,8 +28,10 @@ Parameters:
       one account and region.
   InstanceType:
     Type: String
-    Default: t3a.large
-    Description: 8 GB RAM is the comfortable minimum (Postgres, the API with spaCy, nginx). x86_64 only (the AMI is amd64).
+    Default: t3a.medium
+    Description: >-
+      4 GB RAM is enough (measured about 1.5 GB for Postgres, the API with spaCy, nginx and the OS). Use t3a.large for more
+      headroom. x86_64 only (the AMI is amd64).
   VolumeSizeGb:
     Type: Number
     Default: 30

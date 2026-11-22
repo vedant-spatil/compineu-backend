@@ -36,9 +36,7 @@ ORIGIN_SECRET=$(get ORIGIN_SECRET)
 TRIAGE_MODEL=rules
 TRIAGE_THRESHOLD=0.40
 
-# Evidence (PB6) and logs. The app reads its AWS region for S3 from BEDROCK_REGION (a historic setting name; there is
-# no Bedrock any more) and for CloudWatch from OBSERVABILITY_REGION.
-BEDROCK_REGION=$REGION
+# Evidence (PB6, S3 Object Lock) and logs (CloudWatch). AWS_REGION is the region for both.
 EVIDENCE_BUCKET=$EVIDENCE_BUCKET
 AWS_REGION=$REGION
 AWS_LOG_GROUP=$LOG_GROUP

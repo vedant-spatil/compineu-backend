@@ -5,7 +5,7 @@
 # Optional env:
 #   PROJECT=compineu      name prefix (resources, SSM path /$PROJECT/prod); change it to run two copies side by side
 #   STACK=$PROJECT        CloudFormation stack name
-#   INSTANCE_TYPE=t3a.large
+#   INSTANCE_TYPE=t3a.medium   (4 GB; t3a.large for more headroom)
 #   CREATE_VPC=1          build a fresh VPC even when a default VPC exists (automatic when there is none)
 #   GROQ_MODEL_HEAVY / GROQ_MODEL_LIGHT   Groq model ids (defaults: openai/gpt-oss-120b and openai/gpt-oss-20b)
 #   EVIDENCE_RETENTION_DAYS=1       Object Lock COMPLIANCE days (nobody can delete evidence before then)
@@ -23,7 +23,7 @@ export AWS_REGION="${AWS_REGION:-ap-south-1}" AWS_DEFAULT_REGION="${AWS_REGION:-
 PROJECT="${PROJECT:-compineu}"
 STACK="${STACK:-$PROJECT}"
 PREFIX="/$PROJECT/prod"
-INSTANCE_TYPE="${INSTANCE_TYPE:-t3a.large}"
+INSTANCE_TYPE="${INSTANCE_TYPE:-t3a.medium}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 TEMPLATE="$HERE/compineu.yaml"
 command -v cygpath >/dev/null && TEMPLATE="$(cygpath -w "$TEMPLATE")"   # Windows aws.exe needs a C:\ path
@@ -63,6 +63,7 @@ put_secret PII_ENCRYPTION_KEY "$(fernet_key)"
 put_secret POSTGRES_PASSWORD  "$(rand_hex 24)"
 put_secret ORIGIN_SECRET      "$(rand_hex 32)"
 put_secret ADMIN_PASSWORD     "$(rand_hex 12)"   # demo admin login; read it with: aws ssm get-parameter --with-decryption
+put_secret QA_PASSWORD        "$(rand_hex 12)"   # demo qa reviewer login (admin assigns cases to it), created by infra/box/setup.sh
 put_secret_from_env GROQ_API_KEY GROQ_API_KEY    # the LLM key (Groq); the box reads it from here
 put_secret GROQ_MODEL_HEAVY   "${GROQ_MODEL_HEAVY:-openai/gpt-oss-120b}"
 put_secret GROQ_MODEL_LIGHT   "${GROQ_MODEL_LIGHT:-openai/gpt-oss-20b}"

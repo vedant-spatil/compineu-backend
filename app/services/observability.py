@@ -14,7 +14,7 @@ from typing import Any
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 
-from app.config import get_settings
+from app.config import aws_region, get_settings
 
 log = logging.getLogger(__name__)
 
@@ -128,7 +128,7 @@ def summary(hours: int) -> dict[str, Any]:
     cached = _cache.get(hours)
     if cached is not None and now - cached[0] < CACHE_TTL_S:
         return cached[1]
-    region = settings.observability_region or settings.bedrock_region
+    region = settings.observability_region or aws_region(settings)
     client = boto3.client("logs", region_name=region)
     try:
         raw = _run_queries(client, settings.observability_log_group, int(now - hours * 3600), int(now))

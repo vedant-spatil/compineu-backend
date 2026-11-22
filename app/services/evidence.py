@@ -21,7 +21,7 @@ from typing import Any
 import boto3
 from sqlalchemy.orm import Session
 
-from app.config import get_settings
+from app.config import aws_region, get_settings
 from app.services.audit import write_event
 
 
@@ -36,7 +36,7 @@ def _s3():
     global _client
     if _client is None:
         settings = get_settings()
-        _client = boto3.client("s3", region_name=settings.bedrock_region)
+        _client = boto3.client("s3", region_name=aws_region(settings))
     return _client
 
 

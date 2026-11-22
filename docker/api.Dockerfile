@@ -30,6 +30,6 @@ USER appuser
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
   CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=4).status == 200 else 1)"
 
-# One worker: the case graph and the DB connection pool are sized for one process on a t3a.large.
+# One worker: the case graph and the DB connection pool are sized for one process on a t3a.medium (4 GB).
 # --proxy-headers trusts X-Forwarded-* from nginx on the same Docker network only (see docker-compose.prod.yml).
 CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1 --proxy-headers --forwarded-allow-ips=172.16.0.0/12"]

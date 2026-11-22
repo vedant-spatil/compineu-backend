@@ -18,7 +18,9 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 _INVALID = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid credentials")
 
-# Sign-up is open and always creates a QA user (roles plan, group B). Limited per client IP, in memory: one API process.
+# Sign-up is open and always creates an admin user (owner's decision, 2026-11-23). Anyone who can reach this endpoint
+# becomes an admin, so limit who can reach it in production. Limited per client IP, in memory: one API process.
+SIGNUP_ROLE = "admin"
 SIGNUP_WINDOW_S = 600.0
 SIGNUP_MAX_PER_WINDOW = 5
 _signup_hits: dict[str, list[float]] = {}
@@ -57,7 +59,7 @@ def signup(body: SignupIn, request: Request, db: Session = Depends(db_session)) 
     if db.execute(select(User.id).where(User.email == body.email)).first() is not None:
         # Generic on purpose: do not confirm which emails have accounts.
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="could not create the account; try signing in")
-    user = User(email=body.email, password_hash=hash_password(body.password), role="qa", is_active=True)
+    user = User(email=body.email, password_hash=hash_password(body.password), role=SIGNUP_ROLE, is_active=True)
     db.add(user)
     db.commit()
     invalidate()

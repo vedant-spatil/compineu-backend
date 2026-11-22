@@ -1,5 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -20,7 +21,7 @@ class Settings(BaseSettings):
     llm_provider: str = "groq"
     groq_api_key: str = ""
     bedrock_api_key: str = ""
-    bedrock_region: str = "ap-south-1"
+    bedrock_region: str = "ap-south-1"   # Bedrock client only (llm.py). Everything else uses aws_region below.
     llm_model_heavy: str = ""
     llm_model_light: str = ""
 
@@ -57,8 +58,12 @@ class Settings(BaseSettings):
     model_batch_size: int = 4096
     alert_threshold: float = 0.40
 
+    # Region for S3 (PB6 evidence) and CloudWatch Logs (observability page). Set AWS_REGION on the box. Unset falls back
+    # to bedrock_region (the old name for the same thing), so existing .env files keep working. See aws_region().
+    aws_region: str | None = None
+
     # CloudWatch Logs group the API writes to (awslogs driver). The admin observability page reads it; unset means
-    # the page reports that observability is not configured. observability_region defaults to bedrock_region.
+    # the page reports that observability is not configured. observability_region overrides aws_region for logs only.
     observability_log_group: str | None = None
     observability_region: str | None = None
 
@@ -75,7 +80,7 @@ class Settings(BaseSettings):
     # process (development and fallback). "agentcore" invokes the AgentCore Runtime agent at agentcore_runtime_arn.
     case_runner: str = "local"
     agentcore_runtime_arn: str = ""
-    agentcore_region: str | None = None  # defaults to bedrock_region
+    agentcore_region: str | None = None  # defaults to aws_region
 
     # Disabled: Celery and Redis are commented out (see app/tasks/__init__.py).
     # redis_url: str = "redis://localhost:6379/0"
@@ -105,6 +110,12 @@ class Settings(BaseSettings):
             raise ValueError(f"CASE_RUNNER must be local or agentcore, not {self.case_runner!r}")
         if self.case_runner == "agentcore" and not self.agentcore_runtime_arn:
             raise ValueError("CASE_RUNNER=agentcore needs AGENTCORE_RUNTIME_ARN")
+
+
+def aws_region(settings: Any) -> str:
+    """Region for S3 and CloudWatch: AWS_REGION, else the old BEDROCK_REGION. Reads attributes with getattr so a test
+    stub that only has bedrock_region still works."""
+    return getattr(settings, "aws_region", None) or getattr(settings, "bedrock_region", None) or "ap-south-1"
 
 
 @lru_cache

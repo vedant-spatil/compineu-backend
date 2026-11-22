@@ -12,7 +12,7 @@ from typing import Any
 import boto3
 from botocore.config import Config
 
-from app.config import get_settings
+from app.config import aws_region, get_settings
 
 RUN_TIMEOUT_SECONDS = 8 * 60 * 60  # AgentCore allows runs up to 8 hours
 
@@ -23,7 +23,7 @@ def invoke_case(payload: dict[str, Any], client: Any = None) -> dict[str, Any]:
     if client is None:
         client = boto3.client(
             "bedrock-agentcore",
-            region_name=settings.agentcore_region or settings.bedrock_region,
+            region_name=settings.agentcore_region or aws_region(settings),
             config=Config(read_timeout=RUN_TIMEOUT_SECONDS, connect_timeout=15, retries={"max_attempts": 1}),
         )
     # A session id per run. It must be at least 33 characters, so it carries 32 hex characters of randomness.
