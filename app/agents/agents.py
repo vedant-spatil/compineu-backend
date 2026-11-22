@@ -51,7 +51,7 @@ from app.services.pii import encrypt_map
 WINDOW_HOURS = 48
 BASELINE_DAYS = 30  # history used for an owner's usual daily volume, ending where the window starts
 LIGHT_MAX_TOKENS = 1200
-HEAVY_MAX_TOKENS = 4000  # the REPORT answer is long; a truncated Bedrock tool reply is not retried
+HEAVY_MAX_TOKENS = 4000  # the REPORT answer is long; a truncated tool reply is not retried
 MAX_PROFILE_LOOKUPS = 12
 RECORD_TYPES = ("leave", "ticket", *AUTHORISING_TYPES)
 RECORD_LIMIT = 200

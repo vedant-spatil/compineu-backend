@@ -2,8 +2,8 @@
 
     python -m app.evaluation.golden_set --live [--data data/policyguard] [--label as_generated] [--fresh-cache] [--cases EG1,EF2]
 
-Needs the full world in the database (python -m app.ingest.pg_load data/policyguard --reset), LLM_PROVIDER=bedrock and a
-Bedrock key or AWS credentials. For each case: the scenario's recorded events are inserted (if not there yet), then
+Needs the full world in the database (python -m app.ingest.pg_load data/policyguard --reset), LLM_PROVIDER=groq and a
+GROQ_API_KEY. For each case: the scenario's recorded events are inserted (if not there yet), then
 detection.process_actor(actor, end + 1 s) opens the case and the real compiled graph runs it (triage, load_context,
 evidence | justification | classify, route, then auto_resolve or report_writer). Nothing is simulated except the clock.
 
@@ -402,13 +402,10 @@ def run(data: Path, fresh_cache: bool, only: list[str] | None, *, label: str = "
         from app.db.session import SessionLocal, engine
 
         settings = get_settings()
-        if settings.llm_provider != "bedrock" or not settings.llm_model_light or not settings.llm_model_heavy:
-            raise RuntimeError("LLM_PROVIDER must be bedrock and LLM_MODEL_LIGHT / LLM_MODEL_HEAVY set")
-        if not settings.bedrock_api_key:
-            import botocore.session
-
-            if botocore.session.get_session().get_credentials() is None:
-                raise RuntimeError("no BEDROCK_API_KEY and no AWS credentials")
+        if settings.llm_provider != "groq" or not settings.llm_model_light or not settings.llm_model_heavy:
+            raise RuntimeError("LLM_PROVIDER must be groq and LLM_MODEL_LIGHT / LLM_MODEL_HEAVY set")
+        if not settings.groq_api_key:
+            raise RuntimeError("no GROQ_API_KEY")
         with SessionLocal() as probe:
             agents_n = probe.execute(text("SELECT count(*) FROM agents")).scalar_one()
             events_n = probe.execute(text("SELECT count(*) FROM access_events")).scalar_one()

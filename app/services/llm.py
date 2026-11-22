@@ -1,10 +1,8 @@
 """The only module that talks to an LLM provider (plan 16.12).
 
-The provider comes from LLM_PROVIDER (settings.llm_provider), and the model names from LLM_MODEL_HEAVY and
-LLM_MODEL_LIGHT, so switching provider is a .env change:
-  - "groq" (default): OpenAI-compatible chat completions with the Groq API key. The free tier is tight
-    (about 8,000 tokens a minute per model), so 429 responses wait longer before retrying.
-  - "bedrock": Amazon Bedrock Converse API with the Bedrock API key, in BEDROCK_REGION.
+The provider is Groq (LLM_PROVIDER=groq): OpenAI-compatible chat completions with GROQ_API_KEY. The model names come
+from LLM_MODEL_HEAVY and LLM_MODEL_LIGHT, which are Groq model IDs. The free tier is tight (about 8,000 tokens a minute
+per model), so 429 responses wait longer before retrying.
 
 Structured output: one tool whose parameters are the caller's JSON schema, and the model is forced to call it.
 Every call is cached by a hash of (provider, model, system, user, schema), so reruns cost no tokens.

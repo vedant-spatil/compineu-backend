@@ -9,12 +9,6 @@ def _exc(name: str, module: str, message: str = "") -> Exception:
     return cls(message)
 
 
-def test_neo4j_login_failure_names_the_settings() -> None:
-    msg = describe_error(_exc("AuthError", "neo4j.exceptions", "Unauthorized"))
-    assert msg.startswith("Neo4j: login failed")
-    assert "NEO4J_PASSWORD" in msg
-
-
 def test_postgres_login_failure_names_the_url() -> None:
     msg = describe_error(_exc("OperationalError", "psycopg", 'password authentication failed for user "aml"'))
     assert msg.startswith("Postgres: login failed")

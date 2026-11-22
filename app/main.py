@@ -25,11 +25,6 @@ async def lifespan(_: FastAPI):
     from app.orchestration.graph import get_graph
 
     get_graph()
-    # With TRIAGE_MODEL=xgb, warn now if the configured model run has no scores (cases would use rule scores).
-    # Postgres only; no Neo4j.
-    from app.services.triage_check import warn_if_no_scores
-
-    warn_if_no_scores()
     yield
 
 

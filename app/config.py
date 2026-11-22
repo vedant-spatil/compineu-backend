@@ -15,12 +15,6 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+psycopg://aml:aml@localhost:5432/aml"
 
-    neo4j_uri: str = "bolt://localhost:7687"
-    neo4j_user: str = "neo4j"
-    neo4j_password: str = "change-me-neo4j"
-
-    yente_url: str = "http://localhost:8000"
-
     # LLM provider for app/services/llm.py: "groq" or "bedrock". Model names (below) are IDs for that provider.
     llm_provider: str = "groq"
     groq_api_key: str = ""
@@ -81,9 +75,6 @@ class Settings(BaseSettings):
     case_runner: str = "local"
     agentcore_runtime_arn: str = ""
     agentcore_region: str | None = None  # defaults to bedrock_region
-    # Set when the agent reaches yente through the public nginx route (basic auth). Empty for the internal URL.
-    yente_basic_user: str = ""
-    yente_basic_password: str = ""
 
     # Disabled: Celery and Redis are commented out (see app/tasks/__init__.py).
     # redis_url: str = "redis://localhost:6379/0"
@@ -98,8 +89,6 @@ class Settings(BaseSettings):
             return
         if self.jwt_secret_key.startswith("dev-only") or len(self.jwt_secret_key) < 32:
             raise ValueError("APP_ENV=prod needs JWT_SECRET_KEY of 32+ characters, not the dev default")
-        if self.neo4j_password == "change-me-neo4j":
-            raise ValueError("APP_ENV=prod needs NEO4J_PASSWORD set, not the dev default")
 
     def check_triage(self) -> None:
         """XGBoost triage reads scores for TRIAGE_MODEL_RUN. Without a run every case would fall back to rules."""

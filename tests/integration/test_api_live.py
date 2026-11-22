@@ -31,9 +31,9 @@ def _token(email: str, password: str) -> str:
     return r.json()["access_token"]
 
 
-def test_health_reports_all_dependencies():
+def test_health_reports_postgres():
     body = httpx.get(f"{API_URL}/api/health", timeout=10).json()
-    assert body["postgres"] == "ok" and body["neo4j"] == "ok" and body["yente"] == "ok"
+    assert body["postgres"] == "ok"
 
 
 def test_protected_routes_reject_missing_token():

@@ -16,21 +16,19 @@ cat > .env <<ENV
 APP_ENV=prod
 CORS_ORIGINS=$APP_URL
 
-# LLM: Bedrock through the instance role (no keys). Sonnet 4.6 heavy, Haiku 4.5 light.
-LLM_PROVIDER=bedrock
-BEDROCK_REGION=$REGION
-LLM_MODEL_HEAVY=global.anthropic.claude-sonnet-4-6
-LLM_MODEL_LIGHT=in.anthropic.claude-haiku-4-5-20251001-v1:0
+# LLM: Groq. Model IDs are set in SSM below (GROQ_MODEL_HEAVY, GROQ_MODEL_LIGHT).
+LLM_PROVIDER=groq
+LLM_MODEL_HEAVY=$(get GROQ_MODEL_HEAVY)
+LLM_MODEL_LIGHT=$(get GROQ_MODEL_LIGHT)
 
 # Secrets
+GROQ_API_KEY=$(get GROQ_API_KEY)
 JWT_SECRET_KEY=$(get JWT_SECRET_KEY)
 JWT_ALGORITHM=HS256
 JWT_EXPIRE_MINUTES=60
 PII_ENCRYPTION_KEY=$(get PII_ENCRYPTION_KEY)
 POSTGRES_PASSWORD=$(get POSTGRES_PASSWORD)
 ORIGIN_SECRET=$(get ORIGIN_SECRET)
-# Neo4j is not used by PolicyGuard; the prod check in app/config.py still refuses its dev default until it is removed.
-NEO4J_PASSWORD=$(get ORIGIN_SECRET | cut -c1-24)
 
 # Triage: rules, threshold 0.40 (plan section 4)
 TRIAGE_MODEL=rules
