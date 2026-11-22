@@ -68,7 +68,7 @@ class Settings(BaseSettings):
     observability_region: str | None = None
 
     # PB6 "preserve evidence": S3 bucket with Object Lock (infra/compineu.yaml). Empty disables PB6 with a clear error.
-    # Retention is COMPLIANCE mode: 1 day in the organisers' account, 365 in production.
+    # Retention is COMPLIANCE mode: 1 day while testing, 365 in production.
     evidence_bucket: str = ""
     evidence_retention_days: int = 1
 

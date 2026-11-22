@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Ships the current backend code to the box and (re)starts the stack. Runs from a laptop; no SSH:
 # code goes through the artifacts bucket, commands through SSM Run Command.
-#   AWS_PROFILE=hackathon AWS_REGION=<region> bash infra/ship.sh [setup options]   # working tree (tracked + new files, .gitignore applied)
+#   AWS_PROFILE=<profile> AWS_REGION=<region> bash infra/ship.sh [setup options]   # working tree (tracked + new files, .gitignore applied)
 # The box builds the image itself, so the slow spaCy layer stays cached between deploys. On the box, infra/box/setup.sh
 # does the work: .env from SSM, images, Postgres, migrations, users, demo data (only into an empty database), health
 # check. Options after the script name go to it: --small (small demo data), --reseed, --no-seed, --no-agent.

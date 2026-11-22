@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Live-demo helper: show the newest evidence object in the S3 Object Lock bucket and its lock settings.
-#   AWS_PROFILE=hackathon bash infra/demo/show_evidence.sh [CASE_ID]
+#   AWS_PROFILE=<profile> bash infra/demo/show_evidence.sh [CASE_ID]
 # With a case id it shows that case's newest object (incidents/<id>/...); without one, the newest overall.
 # Read-only. The object cannot be deleted or overwritten until the retention date shown.
 . "$(dirname "$0")/_stack.sh"

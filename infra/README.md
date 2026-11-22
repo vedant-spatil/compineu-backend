@@ -8,7 +8,7 @@ request in AWS. There is no ECS, Fargate or Bedrock in this stack.
 account (VPC, subnet, CloudFront prefix list, secrets) is resolved by `deploy.sh`. Every other script reads names from
 the stack outputs.
 
-Deploys go to the hackathon account only (`AWS_PROFILE=hackathon`, account `389070778843`). `deploy.sh` refuses to run
+Deploys go to the one AWS account you name with `EXPECT_ACCOUNT` (credentials from `AWS_PROFILE=<profile>`). `deploy.sh` refuses to run
 unless `EXPECT_ACCOUNT` matches the account the credentials belong to.
 
 ## Before you start (once per account)
@@ -20,7 +20,7 @@ unless `EXPECT_ACCOUNT` matches the account the credentials belong to.
 ## Deploy (about 25 minutes the first time)
 
 ```bash
-export AWS_PROFILE=hackathon AWS_REGION=ap-south-1 EXPECT_ACCOUNT=389070778843
+export AWS_PROFILE=<profile> AWS_REGION=ap-south-1 EXPECT_ACCOUNT=<account-id>
 read -rs GROQ_API_KEY; export GROQ_API_KEY    # first deploy only (typed, not echoed); later runs keep the SSM value
 bash infra/deploy.sh                          # secrets in SSM, then the stack (CloudFront takes 5-15 min)
 unset GROQ_API_KEY
@@ -31,7 +31,8 @@ bash ../frontend/deploy/ship-web.sh           # React build -> web bucket -> Clo
 
 Run these from `backend/`. `ship.sh --small` loads the small demo data set; `bash infra/bootstrap.sh` wipes the demo
 rows and loads them again later. The full walk-through (EC2, S3, CloudWatch, running `setup.sh` by hand on the box,
-verification and troubleshooting) is in [SETUP.md](SETUP.md). The admin and qa users are `admin@compineu.dev` and
+verification and troubleshooting) is in [SETUP.md](SETUP.md); building everything by hand in the console with the code
+cloned from GitHub is in [MANUAL-SETUP.md](MANUAL-SETUP.md). The admin and qa users are `admin@compineu.dev` and
 `qa@compineu.dev`. To read the admin password:
 
 ```bash

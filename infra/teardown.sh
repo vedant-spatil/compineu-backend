@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Deletes the compineu stack: empties the web and artifacts buckets, then deletes the stack.
-#   AWS_PROFILE=hackathon AWS_REGION=<region> bash infra/teardown.sh            (asks you to type the stack name)
+#   AWS_PROFILE=<profile> AWS_REGION=<region> bash infra/teardown.sh            (asks you to type the stack name)
 #   DELETE_SECRETS=1 ... also deletes the SSM secrets under /<project>/prod.
 # Kept on purpose: the evidence bucket (Object Lock COMPLIANCE). Delete it yourself once its retention has ended:
 #   aws s3api delete-objects / delete-bucket, or the S3 console "Empty" then "Delete".

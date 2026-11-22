@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Re-seeds the demo world on the box and resets the demo users. infra/ship.sh already seeds an EMPTY database on the first
 # ship, so you only need this to load the data again (it wipes earlier demo rows, never cases, alerts or the audit trail).
-#   AWS_PROFILE=hackathon AWS_REGION=<region> bash infra/bootstrap.sh [--small]
+#   AWS_PROFILE=<profile> AWS_REGION=<region> bash infra/bootstrap.sh [--small]
 # It runs infra/box/setup.sh --reseed on the box through SSM. Passwords stay in SSM; the box reads them itself.
 set -euo pipefail
 . "$(dirname "$0")/demo/_stack.sh"   # sets I (instance), U (app url), PREFIX (ssm path), ADMIN_EMAIL

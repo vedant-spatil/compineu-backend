@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Live-demo helper: call the mock agent portal AS an agent and show the HTTP status in big letters.
 # Run it once BEFORE approving (expect 200: he can still read) and once AFTER approving PB1 (expect 403).
-#   AWS_PROFILE=hackathon bash infra/demo/show_403.sh [AGENT_ID] [POLICYHOLDER_ID]
+#   AWS_PROFILE=<profile> bash infra/demo/show_403.sh [AGENT_ID] [POLICYHOLDER_ID]
 # Defaults: AG-1147 and PH-00001. A refused call is recorded as a denied access event, which is the point.
 . "$(dirname "$0")/_stack.sh"
 AGENT=${1:-AG-1147}; PH=${2:-PH-00001}

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # End-to-end: replay a scenario, approve its incident with playbooks, then prove the containment and the evidence.
-#   AWS_PROFILE=hackathon bash infra/demo/approve_e2e.sh S1 PB1,PB6,PB7 AG-1147    (or: S2 PB2,PB6,PB7 PK-CARELINK)
+#   AWS_PROFILE=<profile> bash infra/demo/approve_e2e.sh S1 PB1,PB6,PB7 AG-1147    (or: S2 PB2,PB6,PB7 PK-CARELINK)
 . "$(dirname "$0")/_stack.sh"
 SID=${1:-S1}; PBS=${2:-PB1,PB6,PB7}; ACTOR=${3:-AG-1147}
 q() { local P; P=$(python -c 'import json,sys; q=sys.argv[1]; print(json.dumps({"commands":["cd /opt/compineu/app && docker compose -f docker-compose.prod.yml exec -T postgres psql -U compineu -d compineu -Atc \"%s\"" % q.replace(chr(34), chr(92)+chr(34))]}))' "$1"); local C; C=$(aws ssm send-command --instance-ids $I --document-name AWS-RunShellScript --parameters "$P" --query Command.CommandId --output text); sleep 4; aws ssm get-command-invocation --command-id $C --instance-id $I --query StandardOutputContent --output text; }

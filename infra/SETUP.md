@@ -1,6 +1,8 @@
 # Setting up compineu on AWS: EC2, S3 and CloudWatch
 
-This is the step-by-step guide. [README.md](README.md) is the short reference (options, cost, teardown).
+This is the step-by-step guide. [README.md](README.md) is the short reference (options, cost, teardown). To build the
+AWS resources by hand in the console, with the code coming from GitHub instead of S3, follow
+[MANUAL-SETUP.md](MANUAL-SETUP.md).
 
 Status: the scripts and the template in this folder were checked with `bash -n`, a dry run of `infra/box/setup.sh`,
 `cfn-lint` and the unit tests. They have **not been run against AWS yet**, so expect to fix small things on the first
@@ -27,8 +29,8 @@ On your laptop (Git Bash, Linux, macOS or WSL):
 
 - AWS CLI v2, `openssl`, `python` or `python3`, `tar`, `git`, Node 20 (for the frontend). For `aws ssm start-session`
   also install the Session Manager plugin.
-- AWS credentials for the **hackathon** account (`389070778843`) under a profile named `hackathon`, with admin or
-  PowerUser plus IAM rights. Never use the personal `default` profile; `deploy.sh` refuses to run on any other account.
+- AWS credentials for the account you deploy to (a profile of your choice, written `<profile>` below), with admin or
+  PowerUser plus IAM rights. `deploy.sh` refuses to run unless `EXPECT_ACCOUNT` matches the account of those credentials.
 - A Groq API key.
 
 Pick the instance size (default `t3a.medium`, 4 GB). Measured locally, the API takes about 1 GB, Postgres about 0.13 GB
@@ -47,7 +49,7 @@ All commands below run from the `backend/` folder.
 ## 2. Create everything in AWS (one command)
 
 ```bash
-export AWS_PROFILE=hackathon AWS_REGION=ap-south-1 EXPECT_ACCOUNT=389070778843
+export AWS_PROFILE=<profile> AWS_REGION=ap-south-1 EXPECT_ACCOUNT=<account-id>
 read -rs GROQ_API_KEY; export GROQ_API_KEY      # type the key, nothing is echoed; needed on the first run only
 bash infra/deploy.sh
 unset GROQ_API_KEY
@@ -113,10 +115,10 @@ Use this if you want to pull the backend from S3 yourself. From your laptop, fin
 objects but not list the bucket):
 
 ```bash
-ART=compineu-artifacts-389070778843-ap-south-1       # the ArtifactsBucket output
-aws s3 ls s3://$ART/ --profile hackathon             # backend-<sha>.tgz
+ART=compineu-artifacts-<account-id>-ap-south-1       # the ArtifactsBucket output
+aws s3 ls s3://$ART/ --profile <profile>             # backend-<sha>.tgz
 aws cloudformation describe-stacks --stack-name compineu --query "Stacks[0].Outputs[?OutputKey=='InstanceId'].OutputValue" --output text
-aws ssm start-session --target <instance-id> --profile hackathon
+aws ssm start-session --target <instance-id> --profile <profile>
 ```
 
 On the box:
@@ -124,7 +126,7 @@ On the box:
 ```bash
 sudo -i
 cd /opt/compineu && rm -rf app && mkdir app
-aws s3 cp s3://compineu-artifacts-389070778843-ap-south-1/backend-<sha>.tgz /tmp/backend.tgz
+aws s3 cp s3://compineu-artifacts-<account-id>-ap-south-1/backend-<sha>.tgz /tmp/backend.tgz
 tar -xzf /tmp/backend.tgz -C app && cd app
 # first time only: the non-secret names (ship.sh does this for you, and setup.sh saves them in /opt/compineu/box.env)
 export AWS_REGION=ap-south-1 SSM_PREFIX=/compineu/prod LOG_GROUP=/compineu/prod
@@ -191,7 +193,7 @@ route. If you still launch by hand, set the form like this and create the rest y
 
 | Form field | Value |
 |---|---|
-| Account | The hackathon account `389070778843` (check the account id at the top right of the console). |
+| Account | The account you mean to deploy to (check the account id at the top right of the console). |
 | Name | `compineu-box` |
 | AMI | Ubuntu Server 24.04 LTS, 64-bit (x86) |
 | Instance type | `t3a.medium` |
@@ -230,7 +232,7 @@ Then set `EVIDENCE_BUCKET`, `AWS_REGION`, `OBSERVABILITY_LOG_GROUP` and `AWS_LOG
 
 | Symptom | Cause and fix |
 |---|---|
-| `deploy.sh`: `set EXPECT_ACCOUNT` or `wrong account` | Export `EXPECT_ACCOUNT=389070778843` and `AWS_PROFILE=hackathon`. |
+| `deploy.sh`: `set EXPECT_ACCOUNT` or `wrong account` | Export `EXPECT_ACCOUNT=<account-id>` and `AWS_PROFILE=<profile>`. |
 | `deploy.sh`: `secret GROQ_API_KEY is missing` | First deploy needs `GROQ_API_KEY` in your shell (see step 2). |
 | `ship.sh`: `box still bootstrapping` | The instance is still running its first-boot script. Wait a few minutes and run again. |
 | Build killed or very slow on the box | Out of memory (likely on a `t3a.small`). Use `t3a.medium` or larger; the 2 GB swap file helps but is slow. |

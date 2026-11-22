@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Creates (or updates) the compineu AWS stack: one EC2 box behind CloudFront. Run from a laptop with admin-ish creds.
 #   read -rs GROQ_API_KEY; export GROQ_API_KEY     # first deploy only; stored in SSM, never printed
-#   AWS_PROFILE=hackathon AWS_REGION=ap-south-1 EXPECT_ACCOUNT=389070778843 bash infra/deploy.sh
+#   AWS_PROFILE=<profile> AWS_REGION=ap-south-1 EXPECT_ACCOUNT=<account-id> bash infra/deploy.sh
 # Optional env:
 #   PROJECT=compineu      name prefix (resources, SSM path /$PROJECT/prod); change it to run two copies side by side
 #   STACK=$PROJECT        CloudFormation stack name
@@ -28,45 +28,15 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 TEMPLATE="$HERE/compineu.yaml"
 command -v cygpath >/dev/null && TEMPLATE="$(cygpath -w "$TEMPLATE")"   # Windows aws.exe needs a C:\ path
 
-# Deploys go to the hackathon account only. The account id is required, so a wrong AWS_PROFILE cannot slip through.
-: "${EXPECT_ACCOUNT:?set EXPECT_ACCOUNT=<12-digit account id> (hackathon: 389070778843)}"
+# The account id is required, so a wrong AWS_PROFILE cannot slip through.
+: "${EXPECT_ACCOUNT:?set EXPECT_ACCOUNT=<12-digit account id of the account you mean to deploy to>}"
 ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
 if [ "$ACCOUNT" != "$EXPECT_ACCOUNT" ]; then
   echo "wrong account: $ACCOUNT (expected $EXPECT_ACCOUNT). Check AWS_PROFILE." >&2; exit 1
 fi
 echo "account $ACCOUNT, region $AWS_REGION, stack $STACK, project $PROJECT"
 
-put_secret() {  # put_secret NAME VALUE  (only if absent)
-  if aws ssm get-parameter --name "$PREFIX/$1" >/dev/null 2>&1; then
-    echo "  secret $1: exists, kept"
-  else
-    aws ssm put-parameter --name "$PREFIX/$1" --type SecureString --value "$2" \
-      --tags Key=Project,Value="$PROJECT" >/dev/null
-    echo "  secret $1: created"
-  fi
-}
-put_secret_from_env() {  # put_secret_from_env NAME ENVVAR  (value comes from your shell; needed only while absent)
-  if aws ssm get-parameter --name "$PREFIX/$1" >/dev/null 2>&1; then
-    echo "  secret $1: exists, kept"
-  elif [ -z "${!2:-}" ]; then
-    echo "  secret $1 is missing in SSM: export $2 and run again (the value is never printed)" >&2; exit 1
-  else
-    put_secret "$1" "${!2}"
-  fi
-}
-rand_hex() { openssl rand -hex "$1"; }
-fernet_key() { openssl rand -base64 32 | tr '+/' '-_' | tr -d '\n'; }   # urlsafe base64 of 32 bytes
-
-echo "== secrets ($PREFIX)"
-put_secret JWT_SECRET_KEY     "$(rand_hex 48)"
-put_secret PII_ENCRYPTION_KEY "$(fernet_key)"
-put_secret POSTGRES_PASSWORD  "$(rand_hex 24)"
-put_secret ORIGIN_SECRET      "$(rand_hex 32)"
-put_secret ADMIN_PASSWORD     "$(rand_hex 12)"   # demo admin login; read it with: aws ssm get-parameter --with-decryption
-put_secret QA_PASSWORD        "$(rand_hex 12)"   # demo qa reviewer login (admin assigns cases to it), created by infra/box/setup.sh
-put_secret_from_env GROQ_API_KEY GROQ_API_KEY    # the LLM key (Groq); the box reads it from here
-put_secret GROQ_MODEL_HEAVY   "${GROQ_MODEL_HEAVY:-openai/gpt-oss-120b}"
-put_secret GROQ_MODEL_LIGHT   "${GROQ_MODEL_LIGHT:-openai/gpt-oss-20b}"
+PROJECT="$PROJECT" bash "$HERE/secrets.sh"   # the nine SSM secrets (infra/secrets.sh); existing ones are kept
 ORIGIN_SECRET=$(aws ssm get-parameter --name "$PREFIX/ORIGIN_SECRET" --with-decryption --query Parameter.Value --output text)
 
 echo "== network"

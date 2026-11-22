@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Replay one scenario on AWS, wait for it and for the case to settle, and print what happened.
-#   AWS_PROFILE=hackathon bash infra/demo/smoke.sh S1b [more scenarios...]   (resets first)
+#   AWS_PROFILE=<profile> bash infra/demo/smoke.sh S1b [more scenarios...]   (resets first)
 . "$(dirname "$0")/_stack.sh"
 q() { local P; P=$(python -c 'import json,sys; q=sys.argv[1]; print(json.dumps({"commands":["cd /opt/compineu/app && docker compose -f docker-compose.prod.yml exec -T postgres psql -U compineu -d compineu -Atc \"%s\"" % q.replace(chr(34), chr(92)+chr(34))]}))' "$1"); local C; C=$(aws ssm send-command --instance-ids $I --document-name AWS-RunShellScript --parameters "$P" --query Command.CommandId --output text); sleep 4; aws ssm get-command-invocation --command-id $C --instance-id $I --query StandardOutputContent --output text; }
 PW=$(aws ssm get-parameter --name $PREFIX/ADMIN_PASSWORD --with-decryption --query Parameter.Value --output text)
