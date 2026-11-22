@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Phase 1, step 4: one SNS topic with an email subscription, and the alarms for the box and the stack.
+# One SNS topic with an email subscription, and the alarms for the box and the stack.
 #   INSTANCE_ID=i-xxxxxxxx scripts/aws/04-alarms.sh you@example.com
 # The email must confirm the subscription (AWS sends a link). Idempotent: re-running updates the alarms in place.
 set -euo pipefail
 
 EMAIL="${1:?usage: 04-alarms.sh <alert email>}"
 REGION="${AWS_REGION:-ap-south-1}"
-LOG_NS="AML/Logs"
-HOST_NS="AML/EC2"
+LOG_NS="compineu/Logs"
+HOST_NS="compineu/EC2"
 
 if [ -z "${INSTANCE_ID:-}" ]; then
   TOKEN=$(curl -s -m 2 -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 60" || true)
@@ -18,7 +18,7 @@ case "${INSTANCE_ID:-}" in
   *) echo "set INSTANCE_ID=i-... (the EC2 instance ID; this is not running on the box)" >&2; exit 1 ;;
 esac
 
-TOPIC_ARN=$(aws sns create-topic --region "$REGION" --name aml-alerts --query TopicArn --output text)
+TOPIC_ARN=$(aws sns create-topic --region "$REGION" --name compineu-alerts --query TopicArn --output text)
 if ! aws sns list-subscriptions-by-topic --region "$REGION" --topic-arn "$TOPIC_ARN" \
      --query "Subscriptions[?Endpoint=='$EMAIL'].SubscriptionArn" --output text | grep -q arn; then
   aws sns subscribe --region "$REGION" --topic-arn "$TOPIC_ARN" --protocol email --notification-endpoint "$EMAIL" >/dev/null
@@ -40,12 +40,12 @@ alarm() {  # name, description, namespace, metric, statistic, comparison, thresh
 }
 
 INST="Name=InstanceId,Value=$INSTANCE_ID"
-alarm aml-mem-high      "EC2 memory above 85% for 10 minutes" "$HOST_NS" mem_used_percent  Average GreaterThanThreshold 85 2 300 "$INST"
-alarm aml-swap-high     "Swap above 50% for 10 minutes"       "$HOST_NS" swap_used_percent Average GreaterThanThreshold 50 2 300 "$INST"
-alarm aml-disk-high     "Root disk above 80%"                 "$HOST_NS" disk_used_percent Average GreaterThanThreshold 80 1 300 "$INST"
-alarm aml-cpu-high      "CPU above 80% for 15 minutes"        "$HOST_NS" cpu_usage_active  Average GreaterThanThreshold 80 3 300 "$INST"
-alarm aml-nginx-5xx     "More than 5 nginx 5xx responses in 5 minutes" "$LOG_NS" Nginx5xx Sum GreaterThanThreshold 5 1 300
-alarm aml-api-errors    "API traceback or ERROR line in 5 minutes"     "$LOG_NS" ApiErrors Sum GreaterThanThreshold 0 1 300
-alarm aml-status-check  "EC2 status check failed"             AWS/EC2 StatusCheckFailed Maximum GreaterThanThreshold 0 2 60 "$INST"
+alarm compineu-mem-high      "EC2 memory above 85% for 10 minutes" "$HOST_NS" mem_used_percent  Average GreaterThanThreshold 85 2 300 "$INST"
+alarm compineu-swap-high     "Swap above 50% for 10 minutes"       "$HOST_NS" swap_used_percent Average GreaterThanThreshold 50 2 300 "$INST"
+alarm compineu-disk-high     "Root disk above 80%"                 "$HOST_NS" disk_used_percent Average GreaterThanThreshold 80 1 300 "$INST"
+alarm compineu-cpu-high      "CPU above 80% for 15 minutes"        "$HOST_NS" cpu_usage_active  Average GreaterThanThreshold 80 3 300 "$INST"
+alarm compineu-nginx-5xx     "More than 5 nginx 5xx responses in 5 minutes" "$LOG_NS" Nginx5xx Sum GreaterThanThreshold 5 1 300
+alarm compineu-api-errors    "API traceback or ERROR line in 5 minutes"     "$LOG_NS" ApiErrors Sum GreaterThanThreshold 0 1 300
+alarm compineu-status-check  "EC2 status check failed"             AWS/EC2 StatusCheckFailed Maximum GreaterThanThreshold 0 2 60 "$INST"
 
 echo "done. Topic: $TOPIC_ARN"

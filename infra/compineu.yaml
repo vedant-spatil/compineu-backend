@@ -1,65 +1,173 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >-
-  PolicyGuard AI demo stack (ap-south-1). One EC2 box behind CloudFront, private S3 buckets, an Object Lock evidence
-  bucket and a least-privilege instance role. No SSH: shell access is through SSM Session Manager.
-  Deploy with infra/deploy.sh, which creates the secrets in SSM Parameter Store first.
+  compineu stack, reusable in any AWS account and region. One EC2 box behind CloudFront, private S3 buckets,
+  an Object Lock evidence bucket and a least-privilege instance role. No SSH: shell access is through SSM.
+  The LLM is Groq (an API key kept in SSM Parameter Store), so the role carries no model permissions.
+  Deploy with infra/deploy.sh, which creates the secrets in SSM Parameter Store and fills the network parameters.
+  Leave VpcId empty to have the stack create its own VPC (for accounts without a default VPC).
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label: { default: Naming }
+        Parameters: [Project]
+      - Label: { default: Compute }
+        Parameters: [InstanceType, VolumeSizeGb, AmiId]
+      - Label: { default: Network (leave VpcId and SubnetId empty to create a VPC) }
+        Parameters: [VpcId, SubnetId, AvailabilityZone, CloudFrontPrefixList]
+      - Label: { default: Security and retention }
+        Parameters: [OriginSecret, EvidenceRetentionDays, LogRetentionDays, PriceClass]
 
 Parameters:
   Project:
     Type: String
-    Default: policyguard
+    Default: compineu
+    AllowedPattern: "^[a-z][a-z0-9-]{2,19}$"
+    Description: >-
+      Name prefix for every resource and the SSM path /<Project>/prod. Use a different value to run two copies in
+      one account and region.
   InstanceType:
     Type: String
     Default: t3a.large
+    Description: 8 GB RAM is the comfortable minimum (Postgres, the API with spaCy, nginx). x86_64 only (the AMI is amd64).
+  VolumeSizeGb:
+    Type: Number
+    Default: 30
+    MinValue: 20
   AmiId:
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id
   VpcId:
-    Type: AWS::EC2::VPC::Id
+    Type: String
+    Default: ""
+    Description: Existing VPC (for example the default VPC). Empty creates a new VPC with one public subnet.
   SubnetId:
-    Type: AWS::EC2::Subnet::Id
-    Description: A public subnet (the default VPC's subnets are public).
+    Type: String
+    Default: ""
+    Description: A public subnet in VpcId. Required when VpcId is set.
+  AvailabilityZone:
+    Type: String
+    Default: ""
+    Description: AZ for the created subnet. Empty picks the region's first AZ. deploy.sh picks one that offers InstanceType.
   CloudFrontPrefixList:
     Type: String
-    Default: pl-9aa247f3
-    Description: Managed prefix list com.amazonaws.global.cloudfront.origin-facing in ap-south-1.
+    AllowedPattern: "^pl-[0-9a-f]+$"
+    Description: >-
+      Id of the managed prefix list com.amazonaws.global.cloudfront.origin-facing in this region (it differs per
+      region). deploy.sh looks it up.
   OriginSecret:
     Type: String
     NoEcho: true
     MinLength: 32
     Description: Sent by CloudFront as X-Origin-Verify; nginx rejects requests without it.
-  HeavyProfile:
-    Type: String
-    Default: global.anthropic.claude-sonnet-4-6
-  HeavyModel:
-    Type: String
-    Default: anthropic.claude-sonnet-4-6
-  LightProfile:
-    Type: String
-    Default: in.anthropic.claude-haiku-4-5-20251001-v1:0
-  LightModel:
-    Type: String
-    Default: anthropic.claude-haiku-4-5-20251001-v1:0
   EvidenceRetentionDays:
     Type: Number
     Default: 1
-    Description: Object Lock COMPLIANCE retention. 1 day in the organisers' account; 365 in production.
+    MinValue: 1
+    Description: >-
+      Object Lock COMPLIANCE retention. Nobody, not even root, can delete evidence before it ends, so keep it short
+      for demos (1) and long for production (365).
+  LogRetentionDays:
+    Type: Number
+    Default: 7
+    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365]
+  PriceClass:
+    Type: String
+    Default: PriceClass_200
+    AllowedValues: [PriceClass_100, PriceClass_200, PriceClass_All]
+    Description: PriceClass_200 includes India and most of Asia; PriceClass_100 is North America and Europe only.
+
+Rules:
+  SubnetComesWithVpc:
+    RuleCondition: !Not [!Equals [!Ref VpcId, ""]]
+    Assertions:
+      - Assert: !Not [!Equals [!Ref SubnetId, ""]]
+        AssertDescription: SubnetId is required when VpcId is set.
+
+Conditions:
+  CreateVpc: !Equals [!Ref VpcId, ""]
+  AzGiven: !Not [!Equals [!Ref AvailabilityZone, ""]]
+  UsEast1: !Equals [!Ref "AWS::Region", us-east-1]   # EC2 public DNS there is ec2-...compute-1.amazonaws.com
 
 Resources:
+  # ---------------------------------------------------------------- network (only when no VPC is given)
+  Vpc:
+    Type: AWS::EC2::VPC
+    Condition: CreateVpc
+    Properties:
+      CidrBlock: 10.42.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true          # CloudFront reaches the box through its public DNS name
+      Tags: [{ Key: Name, Value: !Ref Project }]
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Condition: CreateVpc
+    Properties:
+      Tags: [{ Key: Name, Value: !Ref Project }]
+
+  GatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Condition: CreateVpc
+    Properties:
+      VpcId: !Ref Vpc
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Condition: CreateVpc
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.42.0.0/24
+      AvailabilityZone: !If [AzGiven, !Ref AvailabilityZone, !Select [0, !GetAZs ""]]
+      MapPublicIpOnLaunch: true         # the box needs internet for apt and Docker before its Elastic IP attaches
+      Tags: [{ Key: Name, Value: !Sub "${Project}-public" }]
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Condition: CreateVpc
+    Properties:
+      VpcId: !Ref Vpc
+      Tags: [{ Key: Name, Value: !Sub "${Project}-public" }]
+
+  DefaultRoute:
+    Type: AWS::EC2::Route
+    Condition: CreateVpc
+    DependsOn: GatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetRoutes:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: CreateVpc
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref PublicRouteTable
+
+  # DependsOn cannot point at a conditional resource, so the box waits on this handle, which references the route
+  # only when the stack builds the VPC.
+  NetworkReady:
+    Type: AWS::CloudFormation::WaitConditionHandle
+    Metadata:
+      Route: !If [CreateVpc, !Ref DefaultRoute, none]
+      Association: !If [CreateVpc, !Ref PublicSubnetRoutes, none]
+
   # ---------------------------------------------------------------- logs
   LogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /${Project}/prod
-      RetentionInDays: 7
+      RetentionInDays: !Ref LogRetentionDays
 
-  # ---------------------------------------------------------------- buckets
+  # ---------------------------------------------------------------- buckets (names carry account and region: unique)
   EvidenceBucket:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain          # compliance-mode objects cannot be deleted before retention ends, by anyone
     UpdateReplacePolicy: Retain
     Properties:
-      BucketName: !Sub ${Project}-evidence-${AWS::AccountId}
+      BucketName: !Sub ${Project}-evidence-${AWS::AccountId}-${AWS::Region}
       ObjectLockEnabled: true
       ObjectLockConfiguration:
         ObjectLockEnabled: Enabled
@@ -82,7 +190,7 @@ Resources:
   WebBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub ${Project}-web-${AWS::AccountId}
+      BucketName: !Sub ${Project}-web-${AWS::AccountId}-${AWS::Region}
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault: { SSEAlgorithm: AES256 }
@@ -97,7 +205,7 @@ Resources:
   ArtifactsBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub ${Project}-artifacts-${AWS::AccountId}
+      BucketName: !Sub ${Project}-artifacts-${AWS::AccountId}-${AWS::Region}
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault: { SSEAlgorithm: AES256 }
@@ -159,13 +267,13 @@ Resources:
             Resource: !Sub "${WebBucket.Arn}/*"
             Condition:
               StringEquals:
-                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}
+                AWS:SourceArn: !Sub arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${Distribution}
 
   # ---------------------------------------------------------------- instance role (no access keys on the box)
   InstanceRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${Project}-ec2-role
+      RoleName: !Sub ${Project}-ec2-${AWS::Region}      # IAM is global: the region keeps two regions apart
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -173,25 +281,12 @@ Resources:
             Principal: { Service: ec2.amazonaws.com }
             Action: sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore   # Session Manager + Run Command, instead of SSH
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore   # Session Manager + Run Command
       Policies:
         - PolicyName: !Sub ${Project}-app
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Sid: BedrockInvokeTwoModelsOnly
-                Effect: Allow
-                Action: [bedrock:InvokeModel, bedrock:InvokeModelWithResponseStream]
-                Resource:
-                  - !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/${HeavyProfile}
-                  - !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/${LightProfile}
-                  - !Sub arn:aws:bedrock:*::foundation-model/${HeavyModel}
-                  - !Sub arn:aws:bedrock:::foundation-model/${HeavyModel}   # region-less ARN used by global. profiles
-                  - !Sub arn:aws:bedrock:*::foundation-model/${LightModel}  # in. profile routes to ap-south-1 and ap-south-2
-              - Sid: BedrockGuardrail
-                Effect: Allow
-                Action: bedrock:ApplyGuardrail
-                Resource: !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:guardrail/*
               - Sid: EvidenceWriteNoDelete
                 Effect: Allow
                 Action: [s3:PutObject, s3:PutObjectRetention, s3:GetObject, s3:GetObjectRetention, s3:GetObjectVersion]
@@ -211,7 +306,7 @@ Resources:
               - Sid: ReadOwnSecrets
                 Effect: Allow
                 Action: [ssm:GetParameter, ssm:GetParameters, ssm:GetParametersByPath]
-                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${Project}/*
+                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${Project}/*
               - Sid: DecryptSecretsViaSsmOnly
                 Effect: Allow
                 Action: kms:Decrypt
@@ -225,26 +320,35 @@ Resources:
                 Effect: Allow
                 Action: [logs:StartQuery, logs:StopQuery, logs:GetQueryResults, logs:DescribeLogGroups]
                 Resource: "*"
+              - Sid: HostMetricsFromCloudWatchAgent      # scripts/aws/03-cw-agent.sh; only the compineu namespaces
+                Effect: Allow
+                Action: cloudwatch:PutMetricData
+                Resource: "*"
+                Condition: { StringEquals: { "cloudwatch:namespace": ["compineu/EC2"] } }
 
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
-      InstanceProfileName: !Sub ${Project}-ec2-profile
+      InstanceProfileName: !Sub ${Project}-ec2-${AWS::Region}
       Roles: [!Ref InstanceRole]
 
-  # ---------------------------------------------------------------- network: only CloudFront may reach the box
+  # ---------------------------------------------------------------- the box: only CloudFront may reach it
   BoxSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupName: !Sub ${Project}-box
       GroupDescription: HTTP from CloudFront origin-facing IPs only. No SSH.
-      VpcId: !Ref VpcId
+      VpcId: !If [CreateVpc, !Ref Vpc, !Ref VpcId]
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
           SourcePrefixListId: !Ref CloudFrontPrefixList
           Description: CloudFront origin-facing
+      SecurityGroupEgress:
+        - { IpProtocol: tcp, FromPort: 443, ToPort: 443, CidrIp: 0.0.0.0/0, Description: "AWS APIs, apt, Docker Hub" }
+        - { IpProtocol: tcp, FromPort: 80, ToPort: 80, CidrIp: 0.0.0.0/0, Description: apt mirrors }
+        - { IpProtocol: udp, FromPort: 123, ToPort: 123, CidrIp: 0.0.0.0/0, Description: NTP }
 
   LaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
@@ -257,15 +361,16 @@ Resources:
           HttpEndpoint: enabled
         BlockDeviceMappings:
           - DeviceName: /dev/sda1
-            Ebs: { VolumeSize: 30, VolumeType: gp3, Encrypted: true, DeleteOnTermination: true }
+            Ebs: { VolumeSize: !Ref VolumeSizeGb, VolumeType: gp3, Encrypted: true, DeleteOnTermination: true }
 
   Box:
     Type: AWS::EC2::Instance
+    DependsOn: NetworkReady
     Properties:
       ImageId: !Ref AmiId
       InstanceType: !Ref InstanceType
       IamInstanceProfile: !Ref InstanceProfile
-      SubnetId: !Ref SubnetId
+      SubnetId: !If [CreateVpc, !Ref PublicSubnet, !Ref SubnetId]
       SecurityGroupIds: [!Ref BoxSecurityGroup]
       LaunchTemplate:
         LaunchTemplateId: !Ref LaunchTemplate
@@ -287,11 +392,12 @@ Resources:
           usermod -aG docker ubuntu
           systemctl enable --now docker
           snap install aws-cli --classic || true
-          mkdir -p /opt/policyguard && chown ubuntu:ubuntu /opt/policyguard
-          echo ready > /opt/policyguard/.bootstrapped
+          mkdir -p /opt/compineu && chown ubuntu:ubuntu /opt/compineu
+          echo ready > /opt/compineu/.bootstrapped
 
   BoxIp:
     Type: AWS::EC2::EIP
+    DependsOn: NetworkReady
     Properties:
       Domain: vpc
       Tags: [{ Key: Name, Value: !Sub "${Project}-box" }]
@@ -307,7 +413,7 @@ Resources:
     Type: AWS::CloudFront::OriginAccessControl
     Properties:
       OriginAccessControlConfig:
-        Name: !Sub ${Project}-web-oac
+        Name: !Sub ${Project}-web-oac-${AWS::Region}     # CloudFront names are account-wide
         OriginAccessControlOriginType: s3
         SigningBehavior: always
         SigningProtocol: sigv4
@@ -317,7 +423,7 @@ Resources:
   SpaRewrite:
     Type: AWS::CloudFront::Function
     Properties:
-      Name: !Sub ${Project}-spa-rewrite
+      Name: !Sub ${Project}-spa-rewrite-${AWS::Region}
       AutoPublish: true
       FunctionConfig: { Comment: SPA routes to index.html, Runtime: cloudfront-js-2.0 }
       FunctionCode: |
@@ -330,13 +436,14 @@ Resources:
 
   Distribution:
     Type: AWS::CloudFront::Distribution
+    DependsOn: BoxIpAssociation
     Properties:
       DistributionConfig:
-        Comment: !Sub ${Project} web + api
+        Comment: !Sub ${Project} web + api (${AWS::Region})
         Enabled: true
         HttpVersion: http2and3
         IPV6Enabled: true
-        PriceClass: PriceClass_200          # includes India edge locations
+        PriceClass: !Ref PriceClass
         DefaultRootObject: index.html
         Origins:
           - Id: web
@@ -345,9 +452,14 @@ Resources:
             S3OriginConfig: { OriginAccessIdentity: "" }
           - Id: api
             # CloudFront needs a DNS name, not an IP: the EC2 public DNS name of the Elastic IP.
-            DomainName: !Sub
-              - ec2-${Dashed}.${AWS::Region}.compute.amazonaws.com
-              - Dashed: !Join ["-", !Split [".", !Ref BoxIp]]
+            DomainName: !If
+              - UsEast1
+              - !Sub
+                - ec2-${Dashed}.compute-1.amazonaws.com
+                - Dashed: !Join ["-", !Split [".", !Ref BoxIp]]
+              - !Sub
+                - ec2-${Dashed}.${AWS::Region}.compute.amazonaws.com
+                - Dashed: !Join ["-", !Split [".", !Ref BoxIp]]
             CustomOriginConfig:
               HTTPPort: 80
               OriginProtocolPolicy: http-only
@@ -386,9 +498,14 @@ Outputs:
   InstanceId:
     Value: !Ref Box
   OriginDns:
-    Value: !Sub
-      - ec2-${Dashed}.${AWS::Region}.compute.amazonaws.com
-      - Dashed: !Join ["-", !Split [".", !Ref BoxIp]]
+    Value: !If
+      - UsEast1
+      - !Sub
+        - ec2-${Dashed}.compute-1.amazonaws.com
+        - Dashed: !Join ["-", !Split [".", !Ref BoxIp]]
+      - !Sub
+        - ec2-${Dashed}.${AWS::Region}.compute.amazonaws.com
+        - Dashed: !Join ["-", !Split [".", !Ref BoxIp]]
   WebBucket:
     Value: !Ref WebBucket
   EvidenceBucket:
@@ -397,3 +514,6 @@ Outputs:
     Value: !Ref ArtifactsBucket
   LogGroup:
     Value: !Ref LogGroup
+  SsmPrefix:
+    Description: SecureString secrets live under this path (created by deploy.sh, read by the box).
+    Value: !Sub /${Project}/prod

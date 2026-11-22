@@ -20,9 +20,12 @@ mainvenv/
 models/
 graphify-out/
 
-# Box-only secrets and generated nginx config for the yente route (scripts/aws/11-yente-route.sh)
+# Box-only secrets. infra/ holds no secrets (deploy.sh puts them in SSM), but never let one in by accident.
 secrets/
-docker/nginx/yente/yente.conf
+infra/**/*.env
+infra/**/.env*
+infra/**/*.pem
+infra/**/*.key
 
 # Local AI context: CLAUDE.md and the markdown/ docs stay on this machine
 CLAUDE.md

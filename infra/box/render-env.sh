@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # Runs ON THE BOX. Writes .env (mode 600) from SSM Parameter Store, using the instance role. Re-run after a secret
-# changes. Non-secret settings live here so every deploy gets the same values.
-#   bash infra/box/render-env.sh https://dxxxx.cloudfront.net
+# changes. ship.sh passes the stack-specific names (from the CloudFormation outputs) as environment variables.
+#   AWS_REGION=.. SSM_PREFIX=.. EVIDENCE_BUCKET=.. LOG_GROUP=..  bash infra/box/render-env.sh https://dxxxx.cloudfront.net
 set -euo pipefail
 APP_URL="${1:?usage: render-env.sh https://<cloudfront-domain>}"
 REGION="${AWS_REGION:-ap-south-1}"
-PREFIX="/policyguard/prod"
+PREFIX="${SSM_PREFIX:-/compineu/prod}"
+LOG_GROUP="${LOG_GROUP:-$PREFIX}"
+EVIDENCE_BUCKET="${EVIDENCE_BUCKET:?EVIDENCE_BUCKET is required (ship.sh passes it from the stack outputs)}"
 cd "$(dirname "$0")/../.."
 
 get() { aws ssm get-parameter --region "$REGION" --name "$PREFIX/$1" --with-decryption --query Parameter.Value --output text; }
@@ -16,13 +18,13 @@ cat > .env <<ENV
 APP_ENV=prod
 CORS_ORIGINS=$APP_URL
 
-# LLM: Groq. Model IDs are set in SSM below (GROQ_MODEL_HEAVY, GROQ_MODEL_LIGHT).
+# LLM: Groq. The key and the two model ids are SSM parameters created by infra/deploy.sh.
 LLM_PROVIDER=groq
+GROQ_API_KEY=$(get GROQ_API_KEY)
 LLM_MODEL_HEAVY=$(get GROQ_MODEL_HEAVY)
 LLM_MODEL_LIGHT=$(get GROQ_MODEL_LIGHT)
 
 # Secrets
-GROQ_API_KEY=$(get GROQ_API_KEY)
 JWT_SECRET_KEY=$(get JWT_SECRET_KEY)
 JWT_ALGORITHM=HS256
 JWT_EXPIRE_MINUTES=60
@@ -34,11 +36,13 @@ ORIGIN_SECRET=$(get ORIGIN_SECRET)
 TRIAGE_MODEL=rules
 TRIAGE_THRESHOLD=0.40
 
-# Evidence (PB6) and logs
-EVIDENCE_BUCKET=policyguard-evidence-$(aws sts get-caller-identity --query Account --output text)
+# Evidence (PB6) and logs. The app reads its AWS region for S3 from BEDROCK_REGION (a historic setting name; there is
+# no Bedrock any more) and for CloudWatch from OBSERVABILITY_REGION.
+BEDROCK_REGION=$REGION
+EVIDENCE_BUCKET=$EVIDENCE_BUCKET
 AWS_REGION=$REGION
-AWS_LOG_GROUP=/policyguard/prod
-OBSERVABILITY_LOG_GROUP=/policyguard/prod
+AWS_LOG_GROUP=$LOG_GROUP
+OBSERVABILITY_LOG_GROUP=$LOG_GROUP
 OBSERVABILITY_REGION=$REGION
 CASE_RUNNER=local
 ENV

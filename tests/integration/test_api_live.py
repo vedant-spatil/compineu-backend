@@ -1,4 +1,4 @@
-"""Live-stack tests. Need `docker compose up -d` and the API on API_URL (default :8001).
+"""Live-stack tests. Need `docker compose up -d` and the API on API_URL (default :8000).
 Skipped when the stack is not reachable, so unit runs stay fast."""
 
 import os
@@ -9,7 +9,7 @@ from sqlalchemy import create_engine, text
 
 from app.config import get_settings
 
-API_URL = os.environ.get("API_URL", "http://localhost:8001")
+API_URL = os.environ.get("API_URL", "http://localhost:8000")
 INVESTIGATOR = ("investigator1@example.com", os.environ.get("TEST_INVESTIGATOR_PASSWORD", ""))
 ADMIN = ("admin@example.com", os.environ.get("TEST_ADMIN_PASSWORD", ""))
 

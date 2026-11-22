@@ -13,7 +13,8 @@ class Settings(BaseSettings):
     app_env: str = "dev"
     cors_origins: str = "http://localhost:5173"
 
-    database_url: str = "postgresql+psycopg://aml:aml@localhost:5432/aml"
+    # Placeholder password on purpose: the real DATABASE_URL comes from .env (see .env.example).
+    database_url: str = "postgresql+psycopg://compineu:POSTGRES_PASSWORD@localhost:5432/compineu"
 
     # LLM provider for app/services/llm.py: "groq" or "bedrock". Model names (below) are IDs for that provider.
     llm_provider: str = "groq"
@@ -29,7 +30,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
 
-    triage_threshold: float = 0.6
+    triage_threshold: float = 0.40
     # XGBoost triage (plan.md section 24). "rules" keeps the rule score; "xgb" reads triage_scores for
     # TRIAGE_MODEL_RUN and opens a case when that score reaches TRIAGE_SCORE_THRESHOLD.
     triage_model: str = "rules"
@@ -61,7 +62,7 @@ class Settings(BaseSettings):
     observability_log_group: str | None = None
     observability_region: str | None = None
 
-    # PB6 "preserve evidence": S3 bucket with Object Lock (infra/policyguard.yaml). Empty disables PB6 with a clear error.
+    # PB6 "preserve evidence": S3 bucket with Object Lock (infra/compineu.yaml). Empty disables PB6 with a clear error.
     # Retention is COMPLIANCE mode: 1 day in the organisers' account, 365 in production.
     evidence_bucket: str = ""
     evidence_retention_days: int = 1

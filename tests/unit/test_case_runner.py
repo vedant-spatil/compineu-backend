@@ -11,7 +11,7 @@ from app.agentcore_app import handle_case
 from app.config import Settings
 from app.services import agentcore, cases
 
-ARN = "arn:aws:bedrock-agentcore:ap-south-1:123456789012:runtime/aml_case_agent-abc"
+ARN = "arn:aws:bedrock-agentcore:ap-south-1:123456789012:runtime/compineu_case_agent-abc"
 
 
 class _FakeAgentCore:

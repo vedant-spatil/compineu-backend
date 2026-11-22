@@ -2,7 +2,7 @@
 
 Once written, nobody can delete or overwrite that object version until retention ends: not the app, not an admin,
 not the root user. The instance role can put objects and set retention but is explicitly denied delete
-(infra/policyguard.yaml). Credentials come from the instance role on the box, or the AWS profile on a laptop.
+(infra/compineu.yaml). Credentials come from the instance role on the box, or the AWS profile on a laptop.
 
 Called from the workflow's finalize step after an analyst approves PB6:
 

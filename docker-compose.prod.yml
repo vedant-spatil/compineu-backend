@@ -1,20 +1,20 @@
-# PolicyGuard production stack for one EC2 box behind CloudFront (infra/policyguard.yaml).
+# compineu production stack for one EC2 box behind CloudFront (infra/compineu.yaml).
 #
 # On the box:   bash infra/box/render-env.sh https://<cloudfront-domain>   (writes .env from SSM Parameter Store)
 #               docker compose -f docker-compose.prod.yml up -d --build
-# Logs:         docker compose -f docker-compose.prod.yml logs -f api, or CloudWatch Logs group /policyguard/prod
+# Logs:         docker compose -f docker-compose.prod.yml logs -f api, or CloudWatch Logs group /compineu/prod
 #
 # Only nginx publishes a port (80), and the security group lets only CloudFront reach it. nginx also refuses any
 # request without CloudFront's X-Origin-Verify secret. Postgres and the API stay on the internal Docker network.
-# No TLS on the box: CloudFront terminates HTTPS. No Elasticsearch, yente, Neo4j or certbot (AML-only).
+# No TLS on the box: CloudFront terminates HTTPS, so there is no certbot.
 # Container credentials come from the instance role (IMDSv2, hop limit 2); there are no AWS keys in .env.
-name: policyguard-prod
+name: compineu-prod
 
 x-logging: &logging
   driver: awslogs
   options:
     awslogs-region: ${AWS_REGION:-ap-south-1}
-    awslogs-group: ${AWS_LOG_GROUP:-/policyguard/prod}   # created by the stack; the role cannot create groups
+    awslogs-group: ${AWS_LOG_GROUP:-/compineu/prod}   # created by the stack; the role cannot create groups
     tag: "{{.Name}}"                                      # one log stream per container
     mode: non-blocking
     max-buffer-size: 16m
@@ -24,13 +24,13 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: policyguard
-      POSTGRES_DB: policyguard
+      POSTGRES_USER: compineu
+      POSTGRES_DB: compineu
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run infra/box/render-env.sh first}
     volumes:
       - pgdata:/var/lib/postgresql/data   # on the encrypted EBS root volume
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U policyguard -d policyguard"]
+      test: ["CMD-SHELL", "pg_isready -U compineu -d compineu"]
       interval: 5s
       timeout: 3s
       retries: 30
@@ -42,17 +42,17 @@ services:
     build:
       context: .
       dockerfile: docker/api.Dockerfile
-    image: policyguard-api:latest
+    image: compineu-api:latest
     restart: unless-stopped
     env_file: .env
     environment:
       APP_ENV: prod   # refuses dev secrets (app/config.py check_production)
-      DATABASE_URL: postgresql+psycopg://policyguard:${POSTGRES_PASSWORD}@postgres:5432/policyguard
+      DATABASE_URL: postgresql+psycopg://compineu:${POSTGRES_PASSWORD}@postgres:5432/compineu
     expose:
       - "8000"        # reached only by nginx
     volumes:
       # Golden-set results that GET /api/quality reads. Outside the app folder, which every ship replaces.
-      - /opt/policyguard/eval:/app/docs/eval
+      - /opt/compineu/eval:/app/docs/eval
     depends_on:
       postgres:
         condition: service_healthy

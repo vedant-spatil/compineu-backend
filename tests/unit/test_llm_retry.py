@@ -65,6 +65,26 @@ def test_tool_use_failed_gives_up_after_three_calls(monkeypatch, groq) -> None:
     assert len(calls) == 3
 
 
+def test_a_reply_without_the_tool_call_is_retried(monkeypatch, groq) -> None:
+    no_tool = {"choices": [{"message": {"content": "plain text, no tool call"}}]}
+    responses = [_Resp(200, no_tool), _Resp(200, _ok_body())]
+    monkeypatch.setattr(llm, "_post", lambda req: responses.pop(0))
+    assert _call(groq) == {"typologies": []}
+
+
+def test_a_reply_without_the_tool_call_gives_up_after_three_calls(monkeypatch, groq) -> None:
+    calls = []
+
+    def fake_post(req):
+        calls.append(req)
+        return _Resp(200, {"choices": [{"message": {"content": "no tool call"}}]})
+
+    monkeypatch.setattr(llm, "_post", fake_post)
+    with pytest.raises(llm.LlmError, match="no tool call"):
+        _call(groq)
+    assert len(calls) == 3
+
+
 def test_other_bad_requests_are_not_retried(monkeypatch, groq) -> None:
     calls = []
 

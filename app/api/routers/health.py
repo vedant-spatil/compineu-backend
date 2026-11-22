@@ -17,5 +17,5 @@ def _check_db() -> str:
 
 @router.get("/health")
 def health() -> dict[str, str]:
-    # PolicyGuard runs on Postgres alone: the AML Neo4j and yente checks are removed.
+    # compineu runs on Postgres alone: the inherited Neo4j and yente checks are gone.
     return {"status": "ok", "postgres": _check_db()}

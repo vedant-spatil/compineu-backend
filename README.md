@@ -1,32 +1,34 @@
-# AML Copilot backend (POC)
+# compineu backend
 
-Plan: `../plan.md`. Dataset: `docs/HI-Small_Trans.csv` (IBM AML synthetic, Kaggle; check its licence on the Kaggle page; do not commit).
-Sanctions data: OpenSanctions bulk, CC BY-NC 4.0, non-commercial only.
+FastAPI API, LangGraph case workflow, detectors, mock portal and AWS infra for compineu. The project overview, demo
+scenarios and the full run and test commands are in the workspace [README](../README.md). Repo rules are in
+[CLAUDE.md](CLAUDE.md) and the context docs in `markdown/` (runbook, architecture, bugs, updates).
 
 ## Setup
 
 ```bash
-cp .env.example .env            # fill GROQ_API_KEY, PII_ENCRYPTION_KEY, JWT_SECRET_KEY
+cp .env.example .env            # fill POSTGRES_PASSWORD, DATABASE_URL, GROQ_API_KEY, PII_ENCRYPTION_KEY, JWT_SECRET_KEY
 python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"   # PII_ENCRYPTION_KEY
 python -c "import secrets; print(secrets.token_urlsafe(48))"                                  # JWT_SECRET_KEY
-uv venv .venv --python 3.12 && uv pip install -e ".[dev]" --python .venv/bin/python
-python -m spacy download en_core_web_lg --no-deps   # Presidio model, needs pip
+uv sync --extra dev
+python -m spacy download en_core_web_lg --no-deps   # Presidio model
 ```
-
-WSL2: set `memory=12GB` in `%UserProfile%\.wslconfig`, then `wsl --shutdown`.
 
 ## Run
 
 ```bash
-docker compose up -d postgres neo4j elasticsearch yente
-.venv/bin/alembic upgrade head
-.venv/bin/python -m app.ingest.load --csv docs/HI-Small_Trans.csv
-.venv/bin/python -m app.cli.create_user --email you@example.com --password '...'
-.venv/bin/uvicorn app.main:app --port 8000
+docker compose up -d postgres                       # Postgres 16: user and db compineu
+uv run alembic upgrade head                         # head: 0012_portal_fields
+COMPINEU_PASSWORD='<12+ chars>' uv run python -m app.cli.create_user --email admin@compineu.dev --role admin
+uv run python -m app.ingest.pg_generate --out data/policyguard    # synthetic world, seed 42
+uv run python -m app.ingest.pg_load data/policyguard --reset
+uv run uvicorn app.main:app --port 8000
 ```
 
 ## Tests
 
+Run them in Ubuntu (WSL). Native libraries do not load from the `\\wsl.localhost` share with Windows Python.
+
 ```bash
-.venv/bin/python -m pytest -q tests/unit
+UV_PROJECT_ENVIRONMENT=$HOME/.venvs/policyguard uv run --extra dev python -m pytest tests/unit -q
 ```

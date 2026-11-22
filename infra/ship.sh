@@ -1,16 +1,19 @@
 #!/usr/bin/env bash
 # Ships the current backend code to the box and (re)starts the stack. Runs from a laptop; no SSH:
 # code goes through the artifacts bucket, commands through SSM Run Command.
-#   AWS_PROFILE=hackathon bash infra/ship.sh            # working tree (tracked + new files, .gitignore applied)
+#   AWS_PROFILE=hackathon AWS_REGION=<region> bash infra/ship.sh            # working tree (tracked + new files, .gitignore applied)
 # The box builds the image itself, so the slow spaCy layer stays cached between deploys.
 set -euo pipefail
 export MSYS_NO_PATHCONV=1
 export AWS_REGION="${AWS_REGION:-ap-south-1}" AWS_DEFAULT_REGION="${AWS_REGION:-ap-south-1}"
-STACK="${STACK:-policyguard}"
-cd "$(dirname "$0")/.."
+STACK="${STACK:-${PROJECT:-compineu}}"
+command -v python >/dev/null || python() { python3 "$@"; }   # plain Ubuntu has python3 only
+cd "$(dirname "$0")/.."   # the backend repo: docker-compose.prod.yml, docker/ and infra/ are at its root
 
 out() { aws cloudformation describe-stacks --stack-name "$STACK" --query "Stacks[0].Outputs[?OutputKey=='$1'].OutputValue" --output text; }
 BUCKET=$(out ArtifactsBucket); INSTANCE=$(out InstanceId); APP_URL=$(out AppUrl)
+# Everything account- or region-specific comes from the stack outputs, so the box needs no hard-coded names.
+BOXCFG="AWS_REGION=$AWS_REGION SSM_PREFIX=$(out SsmPrefix) EVIDENCE_BUCKET=$(out EvidenceBucket) LOG_GROUP=$(out LogGroup)"
 SHA=$(git rev-parse --short HEAD)$(git diff --quiet HEAD && [ -z "$(git ls-files -o --exclude-standard)" ] || echo "-dirty-$(date +%H%M%S)")
 TARBALL="backend-$SHA.tgz"
 TMP="${TMPDIR:-/tmp}/$TARBALL"
@@ -24,14 +27,14 @@ echo "uploaded $TARBALL ($(git log -1 --format=%s))"
 SCRIPT=$(cat <<EOF
 set -euo pipefail
 export PATH="\$PATH:/snap/bin" HOME=/root
-test -f /opt/policyguard/.bootstrapped || { echo 'box still bootstrapping'; exit 1; }
-cd /opt/policyguard
+test -f /opt/compineu/.bootstrapped || { echo 'box still bootstrapping'; exit 1; }
+cd /opt/compineu
 aws s3 cp s3://$BUCKET/$TARBALL /tmp/$TARBALL --only-show-errors
 rm -rf app && mkdir app && tar -xzf /tmp/$TARBALL -C app   # clean tree each time: no stale files
 cd app
-mkdir -p /opt/policyguard/eval && cp -u docs/eval/*.json /opt/policyguard/eval/ 2>/dev/null || true
-chmod -R a+rwX /opt/policyguard/eval   # the api container runs as a non-root user and writes the live results here
-bash infra/box/render-env.sh $APP_URL
+mkdir -p /opt/compineu/eval && cp -u docs/eval/*.json /opt/compineu/eval/ 2>/dev/null || true
+chmod -R a+rwX /opt/compineu/eval  # the api container runs as a non-root user and writes the live results here
+$BOXCFG bash infra/box/render-env.sh $APP_URL
 docker compose -f docker-compose.prod.yml up -d --build --remove-orphans --force-recreate nginx
 docker compose -f docker-compose.prod.yml up -d --remove-orphans
 docker compose -f docker-compose.prod.yml ps

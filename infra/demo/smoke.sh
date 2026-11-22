@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 # Replay one scenario on AWS, wait for it and for the case to settle, and print what happened.
 #   AWS_PROFILE=hackathon bash infra/demo/smoke.sh S1b [more scenarios...]   (resets first)
-export AWS_REGION=ap-south-1 MSYS_NO_PATHCONV=1
-I=i-00b4b7aecc2e25e69; U=https://d2qe22rm1i2e6w.cloudfront.net
-q() { local P; P=$(python -c 'import json,sys; q=sys.argv[1]; print(json.dumps({"commands":["cd /opt/policyguard/app && docker compose -f docker-compose.prod.yml exec -T postgres psql -U policyguard -d policyguard -Atc \"%s\"" % q.replace(chr(34), chr(92)+chr(34))]}))' "$1"); local C; C=$(aws ssm send-command --instance-ids $I --document-name AWS-RunShellScript --parameters "$P" --query Command.CommandId --output text); sleep 4; aws ssm get-command-invocation --command-id $C --instance-id $I --query StandardOutputContent --output text; }
-PW=$(aws ssm get-parameter --name /policyguard/prod/ADMIN_PASSWORD --with-decryption --query Parameter.Value --output text)
-TOK=$(curl -s -X POST "$U/api/auth/login" -H 'Content-Type: application/json' -d "{\"email\":\"ciso@policyguard.demo\",\"password\":\"$PW\"}" | python -c 'import sys,json; print(json.load(sys.stdin)["access_token"])'); unset PW
+. "$(dirname "$0")/_stack.sh"
+q() { local P; P=$(python -c 'import json,sys; q=sys.argv[1]; print(json.dumps({"commands":["cd /opt/compineu/app && docker compose -f docker-compose.prod.yml exec -T postgres psql -U compineu -d compineu -Atc \"%s\"" % q.replace(chr(34), chr(92)+chr(34))]}))' "$1"); local C; C=$(aws ssm send-command --instance-ids $I --document-name AWS-RunShellScript --parameters "$P" --query Command.CommandId --output text); sleep 4; aws ssm get-command-invocation --command-id $C --instance-id $I --query StandardOutputContent --output text; }
+PW=$(aws ssm get-parameter --name $PREFIX/ADMIN_PASSWORD --with-decryption --query Parameter.Value --output text)
+TOK=$(curl -s -X POST "$U/api/auth/login" -H 'Content-Type: application/json' -d "{\"email\":\"$ADMIN_EMAIL\",\"password\":\"$PW\"}" | python -c 'import sys,json; print(json.load(sys.stdin)["access_token"])'); unset PW
 A=(-H "Authorization: Bearer $TOK")
 for SID in "$@"; do
   curl -s -X POST "${A[@]}" $U/api/replay/reset >/dev/null

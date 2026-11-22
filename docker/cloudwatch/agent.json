@@ -4,7 +4,7 @@
     "metrics_collection_interval": 60
   },
   "metrics": {
-    "namespace": "AML/EC2",
+    "namespace": "compineu/EC2",
     "append_dimensions": {
       "InstanceId": "${aws:InstanceId}"
     },

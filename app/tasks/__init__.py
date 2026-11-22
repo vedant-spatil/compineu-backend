@@ -5,7 +5,7 @@
 # from app.config import get_settings
 #
 # celery_app = Celery(
-#     "aml_copilot",
+#     "compineu",
 #     broker=get_settings().redis_url,
 #     backend=get_settings().redis_url,
 #     include=["app.tasks.assess"],

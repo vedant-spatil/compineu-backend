@@ -3,8 +3,7 @@
 #   AWS_PROFILE=hackathon bash infra/demo/show_evidence.sh [CASE_ID]
 # With a case id it shows that case's newest object (incidents/<id>/...); without one, the newest overall.
 # Read-only. The object cannot be deleted or overwritten until the retention date shown.
-export AWS_REGION=ap-south-1 MSYS_NO_PATHCONV=1
-BUCKET=policyguard-evidence-389070778843
+. "$(dirname "$0")/_stack.sh"
 PREFIX="incidents/${1:+$1/}"
 KEY=$(aws s3api list-objects-v2 --bucket "$BUCKET" --prefix "$PREFIX" \
   --query 'sort_by(Contents,&LastModified)[-1].Key' --output text 2>/dev/null)

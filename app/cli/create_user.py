@@ -2,7 +2,7 @@
 
 Usage (inside the api container or locally with the venv):
     python -m app.cli.create_user --email a@x.com --password '...'
-Password may also be read from the AML_PASSWORD env var to keep it out of shell history.
+Password may also be read from the COMPINEU_PASSWORD env var to keep it out of shell history.
 """
 
 import argparse
@@ -19,13 +19,13 @@ from app.db.session import SessionLocal
 def main() -> int:
     parser = argparse.ArgumentParser(description="Create or reset an investigator user.")
     parser.add_argument("--email", required=True)
-    parser.add_argument("--password", default=os.environ.get("AML_PASSWORD"))
+    parser.add_argument("--password", default=os.environ.get("COMPINEU_PASSWORD"))
     parser.add_argument("--role", choices=["admin", "qa"], help="required when creating a user")
     parser.add_argument("--allow-weak", action="store_true",
                         help="local demo only: skip the 12-character minimum")
     args = parser.parse_args()
     if not args.password or (len(args.password) < 12 and not args.allow_weak):
-        print("password required (min 12 chars, or --allow-weak for local demo), via --password or AML_PASSWORD",
+        print("password required (min 12 chars, or --allow-weak for local demo), via --password or COMPINEU_PASSWORD",
               file=sys.stderr)
         return 2
 

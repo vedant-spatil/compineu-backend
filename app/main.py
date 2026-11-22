@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# The AML imports and projects routers are unhooked for PolicyGuard (their modules stay; see CLAUDE.md rule 5).
+# The inherited AML imports and projects routers are not mounted (their modules are in ../trash, see CLAUDE.md rule 5).
 from app.api.routers import (
     auth,
     cases,
@@ -30,7 +30,7 @@ async def lifespan(_: FastAPI):
 
 def create_app() -> FastAPI:
     settings = get_settings()
-    app = FastAPI(title="AML Investigation Copilot", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="compineu", version="0.1.0", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origin_list,

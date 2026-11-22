@@ -10,7 +10,7 @@ def _exc(name: str, module: str, message: str = "") -> Exception:
 
 
 def test_postgres_login_failure_names_the_url() -> None:
-    msg = describe_error(_exc("OperationalError", "psycopg", 'password authentication failed for user "aml"'))
+    msg = describe_error(_exc("OperationalError", "psycopg", 'password authentication failed for user "compineu"'))
     assert msg.startswith("Postgres: login failed")
     assert "APP_DATABASE_URL" in msg
 

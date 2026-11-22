@@ -183,7 +183,14 @@ def complete_json(
         try:
             resp = _post(req)
             if resp.is_success:
-                parsed = parse(resp.json(), schema_name)
+                try:
+                    parsed = parse(resp.json(), schema_name)
+                except LlmError as exc:
+                    # The model answered without the forced tool call (seen with the Groq gpt-oss models). Ask again;
+                    # the three-call cap still applies.
+                    last_err = exc
+                    time.sleep(2.0 * (attempt + 1))
+                    continue
                 db.add(LlmCache(key=key, response=parsed))
                 db.commit()
                 return parsed
