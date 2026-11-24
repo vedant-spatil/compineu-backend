@@ -63,7 +63,7 @@ def test_one_row_per_scenario_run():
                           "status": "not_detected"}  # no manifest entry: expected comes from the label
 
 
-def test_the_shape_krish_builds_against():
+def test_the_shape_the_frontend_builds_against():
     out = q.summarize(ALERTS, RUNS, MANIFEST)
     assert set(out) == {"scenarios", "ai_off", "ai_on", "time_to_detect_sim_minutes_median", "signals_total",
                         "signals_per_incident"}
@@ -88,7 +88,7 @@ def test_golden_set_files(tmp_path):
     assert q._golden_file(bad)["error"].startswith("unreadable")
 
 
-def test_golden_set_paths_are_bhavyas():
+def test_golden_set_paths_match_eval_module():
     from app.evaluation.golden_set import DEFAULT_OUT, LIVE_OUT
 
     assert q._golden_paths() == (DEFAULT_OUT, LIVE_OUT)

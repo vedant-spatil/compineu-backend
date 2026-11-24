@@ -1,4 +1,4 @@
-"""Detectors A1, A3, A4 (T5) and I1, P1, P2, P3, A2 (T6): small in-memory fixtures per signal, then Sumit's pg_small
+"""Detectors A1, A3, A4 (T5) and I1, P1, P2, P3, A2 (T6): small in-memory fixtures per signal, then the pg_small
 scenarios (S1, S1b, S1c, S1d, S5) checked against tests/fixtures/pg_small/manifest.json. No database."""
 
 import ast
@@ -351,7 +351,7 @@ def test_module_does_not_import_the_unix_only_alerts_module():
     assert "labels" not in {f for f in AccessEvent.__dataclass_fields__}
 
 
-# ------------------------------------------------------------------ Sumit's fixture: the scenarios
+# ------------------------------------------------------------------ pg_small fixture: the scenarios
 
 FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "pg_small"
 NOT_BUILT = {"A5"}  # in S1's manifest entry, but not built today

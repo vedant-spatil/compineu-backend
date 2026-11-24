@@ -1,4 +1,4 @@
-"""LangGraph workflow per case (PolicyGuard, docs/policyguard/BHAVYA_TASKS.md section 2).
+"""LangGraph workflow per case (PolicyGuard, AI lane task section 2).
 
 START -> triage --(closed_low_risk)--> close_low -> END
            |
@@ -81,7 +81,7 @@ def _requested_playbooks(decision: dict[str, Any], action: str) -> list[str]:
 
 
 def _run_playbooks(db: Session, case_id: int, playbooks: list[str], decision: dict[str, Any]) -> None:
-    """Raghav's executor (app.services.playbooks.run_playbooks). Imported lazily: until the module is on main, the approved
+    """The playbook executor (app.services.playbooks.run_playbooks). Imported lazily: until the module is on main, the approved
     ids are only recorded and an audit event says the run was skipped."""
     try:
         from app.services.playbooks import run_playbooks

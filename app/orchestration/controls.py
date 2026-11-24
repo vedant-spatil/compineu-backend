@@ -4,7 +4,7 @@ The REPORT schema lets the model name failed controls and recommended playbooks.
 control or playbook that does not exist can never reach the investigator.
 """
 
-# The nine control ids of the validated catalog in neu-frontend/src/data/controls.json (Krish). The report may only name
+# The nine control ids of the validated catalog in neu-frontend/src/data/controls.json. The report may only name
 # ids found here. Clause text lives in the catalog, not in the model's output.
 CONTROL_IDS: tuple[str, ...] = (
     "C-AUDIT",      # tamper-proof audit trail of every decision and action

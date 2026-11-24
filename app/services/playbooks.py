@@ -1,5 +1,5 @@
 """Response playbooks (plan section 9, T9). `run_playbooks` is called by the workflow's finalize step after an analyst
-approves a case with playbooks chosen (Bhavya's _finalize, from DecisionIn.playbooks).
+approves a case with playbooks chosen (the graph's _finalize, from DecisionIn.playbooks).
 
     PB1  suspend the agent's credential   agents.credential_enabled = False (the portal answers 403 from the next call)
     PB2  disable the partner key           partner_keys.enabled = False (the partner API answers 403)

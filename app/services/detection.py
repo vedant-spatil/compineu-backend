@@ -1,11 +1,11 @@
 """Detection entry point (T7): `process_actor(actor_id, now)` runs the detectors on one actor's last 60 minutes, upserts
 the actor's alert, and opens, updates or escalates the actor's case.
 
-Sumit's replay (app/portal/replay.py) calls it every few seconds per active actor and once at the end, with a simulated
+The replay (app/portal/replay.py) calls it every few seconds per active actor and once at the end, with a simulated
 clock that runs ahead of the wall clock. So the function is idempotent, and `now` is the only clock: every time
 comparison and `alert.ts` use it. This module never reads the wall clock.
 
-Rules (docs/policyguard/RAGHAV_TASKS.md, T7):
+Rules (backend-core task T7):
 0. Only events after the actor's most recent decided case (approved, closed, auto_resolved; not superseded) count; the
    cutoff is that case's alert.raw_json["window"]["end"]. A decided case whose cited events a reset deleted is ignored.
 1. No signals -> "none".

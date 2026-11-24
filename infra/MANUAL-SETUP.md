@@ -20,8 +20,8 @@ Values used below. Change them if yours differ.
 | Web bucket | `compineu-web-157205473853-ap-south-1` |
 | Artifacts bucket | `compineu-artifacts-157205473853-ap-south-1` (not used on this route; leave it empty) |
 | Log group | `/compineu/prod` |
-| Backend repo | `https://github.com/vedant-spatil/compineu-backend.git` |
-| Frontend repo | `https://github.com/vedant-spatil/compineu-frontend.git` |
+| Backend repo | `https://github.com/<github-owner>/compineu-backend.git` |
+| Frontend repo | `https://github.com/<github-owner>/compineu-frontend.git` |
 
 Every step starts in the console, signed in to account `157205473853`, with the region selector (top right) on
 **Asia Pacific (Mumbai)**. Click your account name at the top right to see the account id and check it.
@@ -264,7 +264,7 @@ This is the first of the terminal steps. In the Session Manager terminal from st
 ```bash
 sudo -i
 cd /opt/compineu
-git clone https://github.com/vedant-spatil/compineu-backend.git app
+git clone https://github.com/<github-owner>/compineu-backend.git app
 ```
 
 If the repo is **private**, give the box a read-only deploy key instead. In the terminal run
@@ -273,7 +273,7 @@ public key it prints, and in GitHub open the backend repo, **Settings, Deploy ke
 "Allow write access" **off**. Back in the terminal clone with:
 
 ```bash
-GIT_SSH_COMMAND="ssh -i /root/.ssh/compineu_deploy -o StrictHostKeyChecking=accept-new" git clone git@github.com:vedant-spatil/compineu-backend.git app
+GIT_SSH_COMMAND="ssh -i /root/.ssh/compineu_deploy -o StrictHostKeyChecking=accept-new" git clone git@github.com:<github-owner>/compineu-backend.git app
 git -C app config core.sshCommand "ssh -i /root/.ssh/compineu_deploy"
 ```
 

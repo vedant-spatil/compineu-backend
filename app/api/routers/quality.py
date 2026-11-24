@@ -10,7 +10,7 @@ not counted, so the page shows the runs since the last reset.
 - Precision = true positives / incidents. Recall = attack scenario runs caught by at least one incident / attack runs.
 - Time to detect: alert.ts minus the run's first attack event ts, in simulated minutes (both are on the replay's
   clock), median over the caught attack runs.
-- golden_set: Bhavya's offline and live golden-set results, read from the JSON files app.evaluation.golden_set writes.
+- golden_set: the offline and live golden-set results, read from the JSON files app.evaluation.golden_set writes.
 """
 
 from __future__ import annotations
@@ -130,7 +130,7 @@ def _load(db: Session) -> tuple[list[dict[str, Any]], dict[tuple[str, str], dict
 
 
 def _manifest() -> dict[str, Any]:
-    """Expected routes per scenario, from the replay's world (Sumit's generator). Empty if unavailable."""
+    """Expected routes per scenario, from the replay's world (the generator). Empty if unavailable."""
     try:
         from app.portal.replay import _world
 
@@ -145,7 +145,7 @@ def _golden_paths() -> tuple[Path, Path]:
         from app.evaluation.golden_set import DEFAULT_OUT, LIVE_OUT
 
         return DEFAULT_OUT, LIVE_OUT
-    except Exception:  # noqa: BLE001 - fall back to the same paths as Bhavya's module
+    except Exception:  # noqa: BLE001 - fall back to the same paths as the golden-set module
         root = Path(__file__).resolve().parents[3] / "docs" / "eval"
         return root / "golden_set_results.json", root / "golden_set_live_results.json"
 

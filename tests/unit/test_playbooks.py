@@ -43,7 +43,7 @@ def audit(monkeypatch):
     return SimpleNamespace(events=events, notes=notes)
 
 
-def test_signature_matches_bhavyas_finalize_call():
+def test_signature_matches_graph_finalize_call():
     assert list(inspect.signature(playbooks.run_playbooks).parameters) == [
         "db", "case_id", "playbooks", "actor_user_id", "reason"]
 

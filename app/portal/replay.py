@@ -8,7 +8,7 @@ S1's 38 minutes take about 38 seconds). Event timestamps are on the simulated cl
 is called with that simulated "now" every `tick_s` seconds of real time and once at the end, so its 60-minute
 window sees the whole burst.
 
-Detection is Raghav's `app.services.detection.process_actor(actor_id, now)`. Until that module exists, the replay
+Detection is `app.services.detection.process_actor(actor_id, now)`. Until that module exists, the replay
 still writes the events and reports `detection: unavailable` in its status.
 
 Reset (between rehearsals): stops replays, marks active cases (open, awaiting_review) `superseded` (the audit trigger
@@ -87,7 +87,7 @@ def send(store: PortalStore, e: dict[str, Any], ts: datetime, run: str) -> str:
 
 def _detector() -> Callable[[str, datetime], dict[str, Any]] | None:
     try:
-        from app.services.detection import process_actor  # Raghav T7
+        from app.services.detection import process_actor  # T7
     except ImportError:
         return None
     return process_actor
